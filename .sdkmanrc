@@ -1,0 +1,2 @@
+# Auto-select Java 21 when entering this directory (requires: sdk env)
+java=21.0.2-tem

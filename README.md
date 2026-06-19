@@ -15,10 +15,32 @@ Design documentation: `.ai/design/`
 
 ## Requirements
 
-- Java 21+
+- Java 21+ (project will not build on Java 17)
 - Maven 3.9+
 
 ## Build
+
+This project requires **JDK 21**. If your default Java is 17, set `JAVA_HOME` first:
+
+```bash
+export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+export PATH="$JAVA_HOME/bin:$PATH"
+java -version   # should show 21
+```
+
+If you use SDKMAN:
+
+```bash
+sdk env install   # reads .sdkmanrc
+```
+
+Build and run all JUnit tests:
+
+```bash
+mvn clean test
+```
+
+Full install:
 
 ```bash
 mvn clean install
@@ -30,6 +52,8 @@ mvn clean install
 cd thorium-ui
 mvn javafx:run
 ```
+
+Both build and run must use Java 21 — otherwise you will see `release version 21 not supported` or `UnsupportedClassVersionError`.
 
 Database file: `~/.thorium/timetable.db`
 
