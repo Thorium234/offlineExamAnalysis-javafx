@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.PeriodConfigurationController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Period Configuration" styleClass="page-title"/>
+    <TableView fx:id="periodTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="numberColumn" text="#" prefWidth="50"/>
+            <TableColumn fx:id="labelColumn" text="Label" prefWidth="80"/>
+            <TableColumn fx:id="startColumn" text="Start" prefWidth="100"/>
+            <TableColumn fx:id="endColumn" text="End" prefWidth="100"/>
+        </columns>
+    </TableView>
+    <GridPane hgap="8" vgap="8">
+        <Label text="Period #" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <Spinner fx:id="numberSpinner" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label text="Label" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <TextField fx:id="labelField" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label text="Start (HH:mm)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="startField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="End (HH:mm)" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <TextField fx:id="endField" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
+    <Label fx:id="messageLabel"/>
+</VBox>

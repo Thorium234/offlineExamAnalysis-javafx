@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.thorium.ui.controller.MainController">
+    <left>
+        <VBox spacing="8" styleClass="sidebar">
+            <padding><Insets top="16" right="12" bottom="16" left="12"/></padding>
+            <Label text="Thorium" styleClass="app-title"/>
+            <Label text="Timetable Generator" styleClass="app-subtitle"/>
+            <Separator/>
+            <ListView fx:id="navigationList" prefWidth="200" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </left>
+    <center>
+        <StackPane fx:id="contentPane" styleClass="content-pane"/>
+    </center>
+    <bottom>
+        <HBox styleClass="status-bar" alignment="CENTER_LEFT">
+            <padding><Insets top="6" right="12" bottom="6" left="12"/></padding>
+            <Label fx:id="statusLabel" text="Ready"/>
+        </HBox>
+    </bottom>
+</BorderPane>

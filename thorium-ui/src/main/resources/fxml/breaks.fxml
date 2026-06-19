@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.BreakConfigurationController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Break Configuration" styleClass="page-title"/>
+    <TableView fx:id="breakTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="nameColumn" text="Name" prefWidth="150"/>
+            <TableColumn fx:id="afterColumn" text="After Period" prefWidth="100"/>
+            <TableColumn fx:id="durationColumn" text="Duration (min)" prefWidth="120"/>
+        </columns>
+    </TableView>
+    <GridPane hgap="8" vgap="8">
+        <Label text="Name" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="nameField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label text="After Period" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Spinner fx:id="afterSpinner" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label text="Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="Sort Order" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Spinner fx:id="sortSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
+    <Label fx:id="messageLabel"/>
+</VBox>

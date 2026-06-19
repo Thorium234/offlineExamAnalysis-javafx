@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.ClassManagementController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Class Management" styleClass="page-title"/>
+    <TableView fx:id="classTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
+            <TableColumn fx:id="formColumn" text="Form" prefWidth="60"/>
+            <TableColumn fx:id="streamColumn" text="Stream" prefWidth="100"/>
+            <TableColumn fx:id="displayColumn" text="Display Name" prefWidth="200"/>
+        </columns>
+    </TableView>
+    <GridPane hgap="8" vgap="8">
+        <Label text="Code" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <TextField fx:id="codeField" GridPane.columnIndex="1" GridPane.rowIndex="0"/>
+        <Label text="Form" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <Spinner fx:id="formSpinner" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label text="Stream" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <TextField fx:id="streamField" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <Label text="Display Name" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <TextField fx:id="displayField" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
+    <Label fx:id="messageLabel"/>
+</VBox>

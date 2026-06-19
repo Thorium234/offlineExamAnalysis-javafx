@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.DashboardController" spacing="16">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Dashboard" styleClass="page-title"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button text="Refresh" onAction="#onRefresh"/>
+    </HBox>
+    <GridPane hgap="16" vgap="16">
+        <columnConstraints>
+            <ColumnConstraints percentWidth="33"/>
+            <ColumnConstraints percentWidth="33"/>
+            <ColumnConstraints percentWidth="33"/>
+        </columnConstraints>
+        <VBox styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="0">
+            <Label text="Teachers" styleClass="stat-label"/>
+            <Label fx:id="teachersCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="0">
+            <Label text="Subjects" styleClass="stat-label"/>
+            <Label fx:id="subjectsCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="0">
+            <Label text="Classes" styleClass="stat-label"/>
+            <Label fx:id="classesCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="1">
+            <Label text="Assignments" styleClass="stat-label"/>
+            <Label fx:id="assignmentsCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <Label text="Timetables" styleClass="stat-label"/>
+            <Label fx:id="timetablesCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
+            <Label text="Latest Timetable" styleClass="stat-label"/>
+            <Label fx:id="latestTimetable" text="None" styleClass="stat-value-small"/>
+        </VBox>
+    </GridPane>
+</VBox>

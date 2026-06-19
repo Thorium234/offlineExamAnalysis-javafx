@@ -1,0 +1,113 @@
+package com.thorium.infrastructure;
+
+import com.thorium.application.port.*;
+import com.thorium.application.usecase.assignment.AssignmentManagementUseCase;
+import com.thorium.application.usecase.availability.AvailabilityManagementUseCase;
+import com.thorium.application.usecase.breaks.BreakConfigurationUseCase;
+import com.thorium.application.usecase.classstream.ClassStreamManagementUseCase;
+import com.thorium.application.usecase.dashboard.DashboardUseCase;
+import com.thorium.application.usecase.export.ExportTimetableUseCase;
+import com.thorium.application.usecase.period.PeriodConfigurationUseCase;
+import com.thorium.application.usecase.subject.SubjectManagementUseCase;
+import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
+import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
+import com.thorium.infrastructure.export.CompositeTimetableExporter;
+import com.thorium.infrastructure.export.ExcelTimetableExporter;
+import com.thorium.infrastructure.export.PdfTimetableExporter;
+import com.thorium.infrastructure.persistence.DatabaseInitializer;
+import com.thorium.infrastructure.persistence.SQLiteConnectionProvider;
+import com.thorium.infrastructure.persistence.repository.*;
+
+import java.nio.file.Path;
+
+public final class ApplicationBootstrap {
+
+    private final SQLiteConnectionProvider connectionProvider;
+    private final TeacherRepository teacherRepository;
+    private final SubjectRepository subjectRepository;
+    private final ClassStreamRepository classStreamRepository;
+    private final TeachingAssignmentRepository assignmentRepository;
+    private final TeacherAvailabilityRepository availabilityRepository;
+    private final PeriodRepository periodRepository;
+    private final BreakRepository breakRepository;
+    private final ConstraintRepository constraintRepository;
+    private final TimetableRepository timetableRepository;
+    private final TimetableExporter timetableExporter;
+
+    private ApplicationBootstrap(Path databasePath) {
+        this.connectionProvider = new SQLiteConnectionProvider(databasePath);
+        new DatabaseInitializer(connectionProvider).initialize();
+
+        this.teacherRepository = new SqliteTeacherRepository(connectionProvider);
+        this.subjectRepository = new SqliteSubjectRepository(connectionProvider);
+        this.classStreamRepository = new SqliteClassStreamRepository(connectionProvider);
+        this.assignmentRepository = new SqliteTeachingAssignmentRepository(connectionProvider);
+        this.availabilityRepository = new SqliteTeacherAvailabilityRepository(connectionProvider);
+        this.periodRepository = new SqlitePeriodRepository(connectionProvider);
+        this.breakRepository = new SqliteBreakRepository(connectionProvider);
+        this.constraintRepository = new SqliteConstraintRepository(connectionProvider);
+        this.timetableRepository = new SqliteTimetableRepository(connectionProvider);
+
+        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository);
+        ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
+                assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
+        this.timetableExporter = new CompositeTimetableExporter(pdfExporter, excelExporter);
+    }
+
+    public static ApplicationBootstrap create(Path databasePath) {
+        return new ApplicationBootstrap(databasePath);
+    }
+
+    public TeacherManagementUseCase teacherManagementUseCase() {
+        return new TeacherManagementUseCase(teacherRepository);
+    }
+
+    public SubjectManagementUseCase subjectManagementUseCase() {
+        return new SubjectManagementUseCase(subjectRepository);
+    }
+
+    public ClassStreamManagementUseCase classStreamManagementUseCase() {
+        return new ClassStreamManagementUseCase(classStreamRepository);
+    }
+
+    public AssignmentManagementUseCase assignmentManagementUseCase() {
+        return new AssignmentManagementUseCase(
+                assignmentRepository, teacherRepository, subjectRepository, classStreamRepository);
+    }
+
+    public PeriodConfigurationUseCase periodConfigurationUseCase() {
+        return new PeriodConfigurationUseCase(periodRepository);
+    }
+
+    public BreakConfigurationUseCase breakConfigurationUseCase() {
+        return new BreakConfigurationUseCase(breakRepository);
+    }
+
+    public AvailabilityManagementUseCase availabilityManagementUseCase() {
+        return new AvailabilityManagementUseCase(availabilityRepository, teacherRepository);
+    }
+
+    public GenerateTimetableUseCase generateTimetableUseCase() {
+        return new GenerateTimetableUseCase(
+                timetableRepository, assignmentRepository, teacherRepository, subjectRepository,
+                classStreamRepository, availabilityRepository, periodRepository, constraintRepository);
+    }
+
+    public ExportTimetableUseCase exportTimetableUseCase() {
+        return new ExportTimetableUseCase(timetableRepository, timetableExporter);
+    }
+
+    public DashboardUseCase dashboardUseCase() {
+        return new DashboardUseCase(
+                teacherRepository, subjectRepository, classStreamRepository,
+                assignmentRepository, timetableRepository);
+    }
+
+    public PeriodRepository periodRepository() {
+        return periodRepository;
+    }
+
+    public ConstraintRepository constraintRepository() {
+        return constraintRepository;
+    }
+}

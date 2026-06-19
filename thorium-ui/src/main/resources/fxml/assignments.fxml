@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.AssignmentManagementController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Assignment Management" styleClass="page-title"/>
+    <TableView fx:id="assignmentTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="teacherColumn" text="Teacher" prefWidth="150"/>
+            <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="150"/>
+            <TableColumn fx:id="classColumn" text="Class" prefWidth="150"/>
+            <TableColumn fx:id="lessonsColumn" text="Lessons/Week" prefWidth="100"/>
+        </columns>
+    </TableView>
+    <GridPane hgap="8" vgap="8">
+        <Label text="Teacher" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <ComboBox fx:id="teacherCombo" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
+        <Label text="Subject" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <ComboBox fx:id="subjectCombo" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
+        <Label text="Class" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <ComboBox fx:id="classCombo" GridPane.columnIndex="1" GridPane.rowIndex="2" prefWidth="250"/>
+        <Label text="Lessons/Week" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <Spinner fx:id="lessonsSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
+    <Label fx:id="messageLabel"/>
+</VBox>

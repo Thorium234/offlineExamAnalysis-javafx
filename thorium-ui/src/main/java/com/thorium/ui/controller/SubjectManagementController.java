@@ -1,0 +1,81 @@
+package com.thorium.ui.controller;
+
+import com.thorium.application.dto.SubjectDto;
+import com.thorium.ui.di.AppContext;
+import javafx.collections.FXCollections;
+import javafx.fxml.FXML;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
+
+public class SubjectManagementController {
+
+    @FXML private TableView<SubjectDto> subjectTable;
+    @FXML private TableColumn<SubjectDto, String> codeColumn;
+    @FXML private TableColumn<SubjectDto, String> nameColumn;
+    @FXML private TableColumn<SubjectDto, Boolean> examinableColumn;
+    @FXML private TextField codeField;
+    @FXML private TextField nameField;
+    @FXML private CheckBox examinableCheck;
+    @FXML private Spinner<Integer> cbcLessonsSpinner;
+    @FXML private CheckBox doublePeriodCheck;
+    @FXML private Label messageLabel;
+
+    private Long editingId;
+
+    @FXML
+    private void initialize() {
+        codeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
+        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+        examinableColumn.setCellValueFactory(new PropertyValueFactory<>("examinable"));
+        cbcLessonsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 5));
+        refreshTable();
+        subjectTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
+            if (s != null) populateForm(s);
+        });
+    }
+
+    @FXML private void onSave() {
+        try {
+            SubjectDto dto = new SubjectDto(editingId, codeField.getText().trim(), nameField.getText().trim(),
+                    examinableCheck.isSelected(), cbcLessonsSpinner.getValue(), doublePeriodCheck.isSelected());
+            if (editingId == null) AppContext.get().subjectManagementUseCase().create(dto);
+            else AppContext.get().subjectManagementUseCase().update(dto);
+            clearForm(); refreshTable(); showMessage("Saved", false);
+        } catch (Exception e) { showMessage(e.getMessage(), true); }
+    }
+
+    @FXML private void onDelete() {
+        SubjectDto selected = subjectTable.getSelectionModel().getSelectedItem();
+        if (selected == null) { showMessage("Select a subject", true); return; }
+        try {
+            AppContext.get().subjectManagementUseCase().delete(selected.id());
+            clearForm(); refreshTable(); showMessage("Deleted", false);
+        } catch (Exception e) { showMessage(e.getMessage(), true); }
+    }
+
+    @FXML private void onClear() { clearForm(); }
+
+    private void refreshTable() {
+        subjectTable.setItems(FXCollections.observableArrayList(AppContext.get().subjectManagementUseCase().findAll()));
+    }
+
+    private void populateForm(SubjectDto dto) {
+        editingId = dto.id();
+        codeField.setText(dto.code()); nameField.setText(dto.name());
+        examinableCheck.setSelected(dto.examinable());
+        cbcLessonsSpinner.getValueFactory().setValue(dto.cbcDefaultLessons());
+        doublePeriodCheck.setSelected(dto.allowsDoublePeriod());
+    }
+
+    private void clearForm() {
+        editingId = null; codeField.clear(); nameField.clear();
+        examinableCheck.setSelected(false); cbcLessonsSpinner.getValueFactory().setValue(5);
+        doublePeriodCheck.setSelected(false); subjectTable.getSelectionModel().clearSelection();
+    }
+
+    private void showMessage(String msg, boolean error) {
+        messageLabel.setText(msg);
+        messageLabel.getStyleClass().removeAll("error", "success");
+        messageLabel.getStyleClass().add(error ? "error" : "success");
+    }
+}

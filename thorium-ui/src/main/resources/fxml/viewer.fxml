@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.TimetableViewerController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Timetable Viewer" styleClass="page-title"/>
+        <ComboBox fx:id="timetableCombo" prefWidth="300"/>
+        <Button text="Refresh" onAction="#onRefresh"/>
+    </HBox>
+    <TableView fx:id="entryTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="classColumn" text="Class" prefWidth="120"/>
+            <TableColumn fx:id="subjectColumn" text="Subject" prefWidth="120"/>
+            <TableColumn fx:id="teacherColumn" text="Teacher" prefWidth="150"/>
+            <TableColumn fx:id="dayColumn" text="Day" prefWidth="100"/>
+            <TableColumn fx:id="periodColumn" text="Period" prefWidth="80"/>
+        </columns>
+    </TableView>
+</VBox>

@@ -1,0 +1,96 @@
+.root {
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-background-color: #f4f6f9;
+}
+
+.sidebar {
+    -fx-background-color: #1e293b;
+}
+
+.sidebar .label {
+    -fx-text-fill: #e2e8f0;
+}
+
+.app-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+}
+
+.app-subtitle {
+    -fx-font-size: 11px;
+    -fx-text-fill: #94a3b8;
+}
+
+.sidebar .list-view {
+    -fx-background-color: transparent;
+    -fx-control-inner-background: transparent;
+}
+
+.sidebar .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: #cbd5e1;
+    -fx-padding: 8 12 8 12;
+}
+
+.sidebar .list-cell:selected {
+    -fx-background-color: #334155;
+    -fx-text-fill: white;
+}
+
+.content-pane {
+    -fx-background-color: #f8fafc;
+}
+
+.page-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+}
+
+.stat-card {
+    -fx-background-color: white;
+    -fx-background-radius: 8;
+    -fx-border-color: #e2e8f0;
+    -fx-border-radius: 8;
+    -fx-padding: 16;
+    -fx-spacing: 4;
+}
+
+.stat-label {
+    -fx-text-fill: #64748b;
+    -fx-font-size: 12px;
+}
+
+.stat-value {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #0f172a;
+}
+
+.stat-value-small {
+    -fx-font-size: 14px;
+    -fx-text-fill: #0f172a;
+}
+
+.status-bar {
+    -fx-background-color: #e2e8f0;
+}
+
+.primary-button {
+    -fx-background-color: #2563eb;
+    -fx-text-fill: white;
+}
+
+.error {
+    -fx-text-fill: #dc2626;
+}
+
+.success {
+    -fx-text-fill: #16a34a;
+}
+
+.table-view {
+    -fx-background-color: white;
+    -fx-background-radius: 6;
+}

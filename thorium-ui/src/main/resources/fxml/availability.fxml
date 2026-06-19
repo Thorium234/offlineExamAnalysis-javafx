@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.thorium.ui.controller.AvailabilityManagementController" spacing="12">
+    <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
+    <Label text="Availability Management" styleClass="page-title"/>
+    <TableView fx:id="availabilityTable" VBox.vgrow="ALWAYS">
+        <columns>
+            <TableColumn fx:id="teacherColumn" text="Teacher" prefWidth="150"/>
+            <TableColumn fx:id="dayColumn" text="Day" prefWidth="100"/>
+            <TableColumn fx:id="periodColumn" text="Period" prefWidth="80"/>
+            <TableColumn fx:id="availableColumn" text="Available" prefWidth="80"/>
+        </columns>
+    </TableView>
+    <GridPane hgap="8" vgap="8">
+        <Label text="Teacher" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+        <ComboBox fx:id="teacherCombo" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
+        <Label text="Day" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+        <ComboBox fx:id="dayCombo" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+        <Label text="Period" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+        <Spinner fx:id="periodSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+        <CheckBox fx:id="availableCheck" text="Available" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+    </GridPane>
+    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
+    <Label fx:id="messageLabel"/>
+</VBox>
