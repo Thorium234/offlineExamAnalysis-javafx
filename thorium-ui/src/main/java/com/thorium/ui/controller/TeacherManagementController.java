@@ -2,10 +2,10 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.TeacherDto;
 import com.thorium.ui.di.AppContext;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 public class TeacherManagementController {
 
@@ -36,10 +36,10 @@ public class TeacherManagementController {
 
     @FXML
     private void initialize() {
-        codeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        maxDayColumn.setCellValueFactory(new PropertyValueFactory<>("maxLessonsPerDay"));
-        maxWeekColumn.setCellValueFactory(new PropertyValueFactory<>("maxLessonsPerWeek"));
+        codeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().code()));
+        nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
+        maxDayColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().maxLessonsPerDay()));
+        maxWeekColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().maxLessonsPerWeek()));
         maxDaySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 6));
         maxWeekSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 30));
         activeCheck.setSelected(true);

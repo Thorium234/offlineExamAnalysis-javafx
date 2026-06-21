@@ -2,10 +2,10 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.SubjectDto;
 import com.thorium.ui.di.AppContext;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 public class SubjectManagementController {
 
@@ -24,9 +24,9 @@ public class SubjectManagementController {
 
     @FXML
     private void initialize() {
-        codeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
-        nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
-        examinableColumn.setCellValueFactory(new PropertyValueFactory<>("examinable"));
+        codeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().code()));
+        nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
+        examinableColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().examinable()));
         cbcLessonsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 5));
         refreshTable();
         subjectTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {

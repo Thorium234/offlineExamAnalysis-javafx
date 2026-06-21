@@ -48,7 +48,7 @@ public final class ApplicationBootstrap {
         this.constraintRepository = new SqliteConstraintRepository(connectionProvider);
         this.timetableRepository = new SqliteTimetableRepository(connectionProvider);
 
-        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository);
+        PdfTimetableExporter pdfExporter = new PdfTimetableExporter(assignmentRepository, subjectRepository, classStreamRepository);
         ExcelTimetableExporter excelExporter = new ExcelTimetableExporter(
                 assignmentRepository, subjectRepository, teacherRepository, classStreamRepository);
         this.timetableExporter = new CompositeTimetableExporter(pdfExporter, excelExporter);
@@ -72,7 +72,7 @@ public final class ApplicationBootstrap {
 
     public AssignmentManagementUseCase assignmentManagementUseCase() {
         return new AssignmentManagementUseCase(
-                assignmentRepository, teacherRepository, subjectRepository, classStreamRepository);
+                assignmentRepository, teacherRepository, subjectRepository, classStreamRepository, periodRepository);
     }
 
     public PeriodConfigurationUseCase periodConfigurationUseCase() {

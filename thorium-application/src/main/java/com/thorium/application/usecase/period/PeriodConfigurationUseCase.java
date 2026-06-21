@@ -7,6 +7,7 @@ import com.thorium.domain.model.Period;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 public class PeriodConfigurationUseCase {
@@ -47,9 +48,18 @@ public class PeriodConfigurationUseCase {
         Period period = new Period();
         period.setId(dto.id());
         period.setPeriodNumber(dto.periodNumber());
-        period.setStartTime(LocalTime.parse(dto.startTime(), TIME_FORMAT));
-        period.setEndTime(LocalTime.parse(dto.endTime(), TIME_FORMAT));
+        period.setStartTime(parseTime(dto.startTime(), "startTime"));
+        period.setEndTime(parseTime(dto.endTime(), "endTime"));
         period.setLabel(dto.label());
         return period;
+    }
+
+    private LocalTime parseTime(String time, String fieldName) {
+        try {
+            return LocalTime.parse(time, TIME_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(
+                    fieldName + " must be in HH:mm format (e.g., 08:30), got: " + time);
+        }
     }
 }

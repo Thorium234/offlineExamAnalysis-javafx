@@ -4,10 +4,10 @@ import com.thorium.application.dto.TeacherAvailabilityDto;
 import com.thorium.application.dto.TeacherDto;
 import com.thorium.domain.value.DayOfWeek;
 import com.thorium.ui.di.AppContext;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 public class AvailabilityManagementController {
 
@@ -26,14 +26,20 @@ public class AvailabilityManagementController {
 
     @FXML
     private void initialize() {
-        teacherColumn.setCellValueFactory(new PropertyValueFactory<>("teacherName"));
-        dayColumn.setCellValueFactory(new PropertyValueFactory<>("dayOfWeek"));
-        periodColumn.setCellValueFactory(new PropertyValueFactory<>("periodNumber"));
-        availableColumn.setCellValueFactory(new PropertyValueFactory<>("available"));
+        teacherColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().teacherName()));
+        dayColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().dayOfWeek().displayName()));
+        periodColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().periodNumber()));
+        availableColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().available()));
         dayCombo.setItems(FXCollections.observableArrayList(DayOfWeek.values()));
         periodSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 1));
-        availableCheck.setSelected(false);
+        availableCheck.setSelected(true);
         teacherCombo.setItems(FXCollections.observableArrayList(AppContext.get().teacherManagementUseCase().findAll()));
+        teacherCombo.setCellFactory(lv -> new ListCell<TeacherDto>() {
+            @Override protected void updateItem(TeacherDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
+            }
+        });
         refreshTable();
         availabilityTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
@@ -80,7 +86,7 @@ public class AvailabilityManagementController {
         teacherCombo.getSelectionModel().clearSelection();
         dayCombo.getSelectionModel().clearSelection();
         periodSpinner.getValueFactory().setValue(1);
-        availableCheck.setSelected(false);
+        availableCheck.setSelected(true);
         availabilityTable.getSelectionModel().clearSelection();
     }
 

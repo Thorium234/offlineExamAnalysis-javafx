@@ -13,7 +13,7 @@ public final class ScheduleSlot {
         if (dayOfWeek == null) {
             throw new IllegalArgumentException("dayOfWeek is required");
         }
-        if (periodNumber <= 0) {
+        if (periodNumber < 1) {
             throw new IllegalArgumentException("periodNumber must be positive");
         }
         this.dayOfWeek = dayOfWeek;

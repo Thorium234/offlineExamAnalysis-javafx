@@ -6,6 +6,7 @@ import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 
@@ -19,6 +20,12 @@ public class ExportCenterController {
     @FXML
     private void initialize() {
         refreshTimetables();
+        timetableCombo.setCellFactory(lv -> new ListCell<TimetableDto>() {
+            @Override protected void updateItem(TimetableDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.status() + ")");
+            }
+        });
     }
 
     @FXML

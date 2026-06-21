@@ -2,10 +2,12 @@ package com.thorium.application.usecase.assignment;
 
 import com.thorium.application.dto.TeachingAssignmentDto;
 import com.thorium.application.port.ClassStreamRepository;
+import com.thorium.application.port.PeriodRepository;
 import com.thorium.application.port.SubjectRepository;
 import com.thorium.application.port.TeacherRepository;
 import com.thorium.application.port.TeachingAssignmentRepository;
 import com.thorium.domain.model.TeachingAssignment;
+import com.thorium.domain.value.DayOfWeek;
 
 import java.util.List;
 
@@ -15,15 +17,18 @@ public class AssignmentManagementUseCase {
     private final TeacherRepository teacherRepository;
     private final SubjectRepository subjectRepository;
     private final ClassStreamRepository classStreamRepository;
+    private final PeriodRepository periodRepository;
 
     public AssignmentManagementUseCase(TeachingAssignmentRepository assignmentRepository,
                                        TeacherRepository teacherRepository,
                                        SubjectRepository subjectRepository,
-                                       ClassStreamRepository classStreamRepository) {
+                                       ClassStreamRepository classStreamRepository,
+                                       PeriodRepository periodRepository) {
         this.assignmentRepository = assignmentRepository;
         this.teacherRepository = teacherRepository;
         this.subjectRepository = subjectRepository;
         this.classStreamRepository = classStreamRepository;
+        this.periodRepository = periodRepository;
     }
 
     public TeachingAssignmentDto create(TeachingAssignmentDto dto) {
@@ -83,6 +88,11 @@ public class AssignmentManagementUseCase {
         }
         if (dto.lessonsPerWeek() <= 0) {
             throw new IllegalArgumentException("Lessons per week must be positive");
+        }
+        int totalSlots = periodRepository.count() * DayOfWeek.workingDays().size();
+        if (dto.lessonsPerWeek() > totalSlots) {
+            throw new IllegalArgumentException(
+                    "Lessons per week (" + dto.lessonsPerWeek() + ") exceeds available weekly slots (" + totalSlots + ")");
         }
         teacherRepository.findById(dto.teacherId())
                 .orElseThrow(() -> new IllegalArgumentException("Teacher not found"));

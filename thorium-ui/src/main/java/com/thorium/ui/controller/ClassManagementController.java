@@ -2,10 +2,10 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.ClassStreamDto;
 import com.thorium.ui.di.AppContext;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 public class ClassManagementController {
 
@@ -24,10 +24,10 @@ public class ClassManagementController {
 
     @FXML
     private void initialize() {
-        codeColumn.setCellValueFactory(new PropertyValueFactory<>("code"));
-        formColumn.setCellValueFactory(new PropertyValueFactory<>("form"));
-        streamColumn.setCellValueFactory(new PropertyValueFactory<>("stream"));
-        displayColumn.setCellValueFactory(new PropertyValueFactory<>("displayName"));
+        codeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().code()));
+        formColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().form()));
+        streamColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().stream()));
+        displayColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().displayName()));
         formSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4, 1));
         refreshTable();
         classTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {

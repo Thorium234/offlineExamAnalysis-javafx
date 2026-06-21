@@ -2,10 +2,10 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.*;
 import com.thorium.ui.di.AppContext;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 public class AssignmentManagementController {
 
@@ -24,10 +24,10 @@ public class AssignmentManagementController {
 
     @FXML
     private void initialize() {
-        teacherColumn.setCellValueFactory(new PropertyValueFactory<>("teacherName"));
-        subjectColumn.setCellValueFactory(new PropertyValueFactory<>("subjectName"));
-        classColumn.setCellValueFactory(new PropertyValueFactory<>("classStreamName"));
-        lessonsColumn.setCellValueFactory(new PropertyValueFactory<>("lessonsPerWeek"));
+        teacherColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().teacherName()));
+        subjectColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().subjectName()));
+        classColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().classStreamName()));
+        lessonsColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().lessonsPerWeek()));
         lessonsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 5));
         loadCombos();
         refreshTable();
@@ -62,8 +62,26 @@ public class AssignmentManagementController {
 
     private void loadCombos() {
         teacherCombo.setItems(FXCollections.observableArrayList(AppContext.get().teacherManagementUseCase().findAll()));
+        teacherCombo.setCellFactory(lv -> new ListCell<TeacherDto>() {
+            @Override protected void updateItem(TeacherDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
+            }
+        });
         subjectCombo.setItems(FXCollections.observableArrayList(AppContext.get().subjectManagementUseCase().findAll()));
+        subjectCombo.setCellFactory(lv -> new ListCell<SubjectDto>() {
+            @Override protected void updateItem(SubjectDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
+            }
+        });
         classCombo.setItems(FXCollections.observableArrayList(AppContext.get().classStreamManagementUseCase().findAll()));
+        classCombo.setCellFactory(lv -> new ListCell<ClassStreamDto>() {
+            @Override protected void updateItem(ClassStreamDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.displayName());
+            }
+        });
     }
 
     private void refreshTable() {

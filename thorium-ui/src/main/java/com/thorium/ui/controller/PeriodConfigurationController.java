@@ -2,10 +2,10 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.PeriodDto;
 import com.thorium.ui.di.AppContext;
+import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 
 public class PeriodConfigurationController {
 
@@ -24,10 +24,10 @@ public class PeriodConfigurationController {
 
     @FXML
     private void initialize() {
-        numberColumn.setCellValueFactory(new PropertyValueFactory<>("periodNumber"));
-        labelColumn.setCellValueFactory(new PropertyValueFactory<>("label"));
-        startColumn.setCellValueFactory(new PropertyValueFactory<>("startTime"));
-        endColumn.setCellValueFactory(new PropertyValueFactory<>("endTime"));
+        numberColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().periodNumber()));
+        labelColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().label()));
+        startColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().startTime()));
+        endColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().endTime()));
         numberSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 1));
         refreshTable();
         periodTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {

@@ -1,5 +1,7 @@
 package com.thorium.infrastructure.export;
 
+import com.thorium.application.port.ClassStreamRepository;
+import com.thorium.application.port.SubjectRepository;
 import com.thorium.application.port.TeachingAssignmentRepository;
 import com.thorium.application.port.TimetableExporter;
 import com.thorium.application.port.TimetableRepository;
@@ -21,9 +23,15 @@ import java.util.stream.Collectors;
 public class PdfTimetableExporter implements TimetableExporter {
 
     private final TeachingAssignmentRepository assignmentRepository;
+    private final SubjectRepository subjectRepository;
+    private final ClassStreamRepository classStreamRepository;
 
-    public PdfTimetableExporter(TeachingAssignmentRepository assignmentRepository) {
+    public PdfTimetableExporter(TeachingAssignmentRepository assignmentRepository,
+                                SubjectRepository subjectRepository,
+                                ClassStreamRepository classStreamRepository) {
         this.assignmentRepository = assignmentRepository;
+        this.subjectRepository = subjectRepository;
+        this.classStreamRepository = classStreamRepository;
     }
 
     @Override
@@ -94,7 +102,12 @@ public class PdfTimetableExporter implements TimetableExporter {
         Map<String, List<TimetableEntry>> grouped = new LinkedHashMap<>();
         for (TimetableEntry entry : entries) {
             TeachingAssignment assignment = assignments.get(entry.getTeachingAssignmentId());
-            String classKey = assignment != null ? "Class " + assignment.getClassStreamId() : "Unknown";
+            String classKey = "Unknown";
+            if (assignment != null) {
+                classKey = classStreamRepository.findById(assignment.getClassStreamId())
+                        .map(c -> c.getDisplayName())
+                        .orElse("Class #" + assignment.getClassStreamId());
+            }
             grouped.computeIfAbsent(classKey, k -> new ArrayList<>()).add(entry);
         }
         return grouped;
@@ -106,7 +119,13 @@ public class PdfTimetableExporter implements TimetableExporter {
         Map<String, String> cells = new HashMap<>();
         for (TimetableEntry entry : entries) {
             TeachingAssignment assignment = assignments.get(entry.getTeachingAssignmentId());
-            String label = assignment != null ? "Subj#" + assignment.getSubjectId() : "?";
+            String label = "?";
+            if (assignment != null) {
+                String subjectName = subjectRepository.findById(assignment.getSubjectId())
+                        .map(s -> s.getName()).orElse("?");
+                String teacherName = ""; // could be added if desired
+                label = subjectName;
+            }
             cells.put(entry.getDayOfWeek().name() + "-" + entry.getPeriodNumber(), label);
         }
         return cells;
