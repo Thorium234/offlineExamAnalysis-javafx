@@ -13,8 +13,8 @@
         <ComboBox fx:id="timetableCombo" prefWidth="300"/>
     </HBox>
     <HBox spacing="12">
-        <Button text="Export PDF" onAction="#onExportPdf" styleClass="primary-button"/>
-        <Button text="Export Excel" onAction="#onExportExcel"/>
+        <Button fx:id="exportPdfBtn" text="Export PDF" onAction="#onExportPdf" styleClass="primary-button"/>
+        <Button fx:id="exportExcelBtn" text="Export Excel" onAction="#onExportExcel"/>
     </HBox>
     <Label fx:id="messageLabel" wrapText="true"/>
 </VBox>

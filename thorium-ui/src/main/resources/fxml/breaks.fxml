@@ -25,6 +25,6 @@
         <Label text="Sort Order" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
         <Spinner fx:id="sortSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
     </GridPane>
-    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
+    <HBox spacing="8"><Button fx:id="saveBtn" text="Save" onAction="#onSave"/><Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/><Button fx:id="clearBtn" text="Clear" onAction="#onClear"/></HBox>
     <Label fx:id="messageLabel"/>
 </VBox>

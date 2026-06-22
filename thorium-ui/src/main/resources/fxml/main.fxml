@@ -12,7 +12,7 @@
             <Label text="Thorium" styleClass="app-title"/>
             <Label text="Timetable Generator" styleClass="app-subtitle"/>
             <Separator/>
-            <ListView fx:id="navigationList" prefWidth="200" VBox.vgrow="ALWAYS"/>
+            <ListView fx:id="navigationList" prefWidth="220" VBox.vgrow="ALWAYS"/>
         </VBox>
     </left>
     <center>

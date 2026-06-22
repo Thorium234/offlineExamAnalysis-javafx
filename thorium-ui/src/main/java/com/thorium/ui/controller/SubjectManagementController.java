@@ -2,10 +2,12 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.SubjectDto;
 import com.thorium.ui.di.AppContext;
+import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.paint.Color;
 
 public class SubjectManagementController {
 
@@ -19,12 +21,19 @@ public class SubjectManagementController {
     @FXML private Spinner<Integer> cbcLessonsSpinner;
     @FXML private CheckBox doublePeriodCheck;
     @FXML private CheckBox requiresDoubleCheck;
+    @FXML private ColorPicker colorPicker;
     @FXML private Label messageLabel;
+    @FXML private Button saveBtn;
+    @FXML private Button deleteBtn;
+    @FXML private Button clearBtn;
 
     private Long editingId;
 
     @FXML
     private void initialize() {
+        IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#16a34a");
+        IconUtil.addIcon(deleteBtn, IconUtil.DELETE, "#dc2626");
+        IconUtil.addIcon(clearBtn, IconUtil.CLEAR, "#64748b");
         codeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().code()));
         nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
         examinableColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().examinable()));
@@ -37,9 +46,12 @@ public class SubjectManagementController {
 
     @FXML private void onSave() {
         try {
+            String colorHex = colorPicker.getValue() != null
+                    ? "#" + colorPicker.getValue().toString().substring(2, 8)
+                    : null;
             SubjectDto dto = new SubjectDto(editingId, codeField.getText().trim(), nameField.getText().trim(),
                     examinableCheck.isSelected(), cbcLessonsSpinner.getValue(), doublePeriodCheck.isSelected(),
-                    requiresDoubleCheck.isSelected());
+                    requiresDoubleCheck.isSelected(), colorHex);
             if (editingId == null) AppContext.get().subjectManagementUseCase().create(dto);
             else AppContext.get().subjectManagementUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
@@ -70,12 +82,16 @@ public class SubjectManagementController {
         cbcLessonsSpinner.getValueFactory().setValue(dto.cbcDefaultLessons());
         doublePeriodCheck.setSelected(dto.allowsDoublePeriod());
         requiresDoubleCheck.setSelected(dto.requiresDoublePeriod());
+        if (dto.color() != null && !dto.color().isBlank()) {
+            colorPicker.setValue(Color.web(dto.color()));
+        }
     }
 
     private void clearForm() {
         editingId = null; codeField.clear(); nameField.clear();
         examinableCheck.setSelected(false); cbcLessonsSpinner.getValueFactory().setValue(5);
         doublePeriodCheck.setSelected(false); requiresDoubleCheck.setSelected(false);
+        colorPicker.setValue(null);
         subjectTable.getSelectionModel().clearSelection();
     }
 

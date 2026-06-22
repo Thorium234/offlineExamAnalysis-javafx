@@ -2,7 +2,9 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.TimetableDto;
 import com.thorium.ui.di.AppContext;
+import com.thorium.ui.util.IconUtil;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 
@@ -11,6 +13,12 @@ public class TimetableGenerationController {
     @FXML private TextField nameField;
     @FXML private Label resultLabel;
     @FXML private Label qualityLabel;
+    @FXML private Button generateBtn;
+
+    @FXML
+    private void initialize() {
+        IconUtil.addIcon(generateBtn, IconUtil.GENERATE, "#ffffff");
+    }
 
     @FXML
     private void onGenerate() {

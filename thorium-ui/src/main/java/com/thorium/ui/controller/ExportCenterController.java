@@ -2,8 +2,10 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.TimetableDto;
 import com.thorium.ui.di.AppContext;
+import com.thorium.ui.util.IconUtil;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
+import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListCell;
@@ -16,9 +18,13 @@ public class ExportCenterController {
 
     @FXML private ComboBox<TimetableDto> timetableCombo;
     @FXML private Label messageLabel;
+    @FXML private Button exportPdfBtn;
+    @FXML private Button exportExcelBtn;
 
     @FXML
     private void initialize() {
+        IconUtil.addIcon(exportPdfBtn, IconUtil.EXPORT, "#ffffff");
+        IconUtil.addIcon(exportExcelBtn, IconUtil.EXPORT, "#16a34a");
         refreshTimetables();
         timetableCombo.setCellFactory(lv -> new ListCell<TimetableDto>() {
             @Override protected void updateItem(TimetableDto item, boolean empty) {

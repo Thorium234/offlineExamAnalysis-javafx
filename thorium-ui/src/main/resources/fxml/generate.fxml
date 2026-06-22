@@ -12,7 +12,7 @@
     <HBox spacing="8" alignment="CENTER_LEFT">
         <Label text="Timetable Name:"/>
         <TextField fx:id="nameField" promptText="Optional name" prefWidth="300"/>
-        <Button text="Generate Timetable" onAction="#onGenerate" styleClass="primary-button"/>
+        <Button fx:id="generateBtn" text="Generate Timetable" onAction="#onGenerate" styleClass="primary-button"/>
     </HBox>
     <Label fx:id="resultLabel" wrapText="true"/>
     <Label fx:id="qualityLabel"/>

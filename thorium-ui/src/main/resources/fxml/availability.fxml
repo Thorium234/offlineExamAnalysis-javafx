@@ -5,26 +5,36 @@
 <?import javafx.scene.layout.*?>
 
 <VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.thorium.ui.controller.AvailabilityManagementController" spacing="12">
+      fx:controller="com.thorium.ui.controller.AvailabilityManagementController" spacing="16"
+      style="-fx-background-color: #f8fafc;">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
-    <Label text="Availability Management" styleClass="page-title"/>
-    <TableView fx:id="availabilityTable" VBox.vgrow="ALWAYS">
-        <columns>
-            <TableColumn fx:id="teacherColumn" text="Teacher" prefWidth="150"/>
-            <TableColumn fx:id="dayColumn" text="Day" prefWidth="100"/>
-            <TableColumn fx:id="periodColumn" text="Period" prefWidth="80"/>
-            <TableColumn fx:id="availableColumn" text="Available" prefWidth="80"/>
-        </columns>
-    </TableView>
-    <GridPane hgap="8" vgap="8">
-        <Label text="Teacher" GridPane.columnIndex="0" GridPane.rowIndex="0"/>
-        <ComboBox fx:id="teacherCombo" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
-        <Label text="Day" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
-        <ComboBox fx:id="dayCombo" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
-        <Label text="Period" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-        <Spinner fx:id="periodSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <CheckBox fx:id="availableCheck" text="Available" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-    </GridPane>
-    <HBox spacing="8"><Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/></HBox>
-    <Label fx:id="messageLabel"/>
+    
+    <VBox spacing="4">
+        <Label text="Teacher Availability Blocker" styleClass="page-title" style="-fx-font-size: 22px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
+        <Label text="Click slots on the grid to block teachers from being scheduled. Morning/evening blocks will prevent early/late assignments." style="-fx-font-size: 13px; -fx-text-fill: #64748b;"/>
+    </VBox>
+    
+    <HBox spacing="16" alignment="CENTER_LEFT" style="-fx-background-color: white; -fx-padding: 12; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+        <Label text="Select Teacher:" style="-fx-font-weight: 600; -fx-text-fill: #334155;"/>
+        <ComboBox fx:id="teacherCombo" prefWidth="250" style="-fx-background-radius: 6;"/>
+        
+        <Region HBox.hgrow="ALWAYS"/>
+        
+        <HBox fx:id="quickActionsBox" spacing="8" alignment="CENTER_LEFT" disable="true">
+            <Button text="Block Mornings" onAction="#onBlockMornings" style="-fx-background-radius: 6; -fx-padding: 6 12; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-color: #fee2e2; -fx-text-fill: #dc2626; -fx-border-color: #fca5a5;"/>
+            <Button text="Block Evenings" onAction="#onBlockEvenings" style="-fx-background-radius: 6; -fx-padding: 6 12; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-color: #fee2e2; -fx-text-fill: #dc2626; -fx-border-color: #fca5a5;"/>
+            <Button text="Clear All Blocks" onAction="#onClearAllBlocks" style="-fx-background-radius: 6; -fx-padding: 6 12; -fx-font-weight: bold; -fx-cursor: hand; -fx-background-color: #f1f5f9; -fx-text-fill: #475569; -fx-border-color: #cbd5e1;"/>
+        </HBox>
+    </HBox>
+    
+    <VBox VBox.vgrow="ALWAYS" style="-fx-background-color: white; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-padding: 20;">
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-padding: 0 0 12 0;">
+            <Label fx:id="gridTitleLabel" text="Availability Grid (Please select a teacher)" style="-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #1e293b;"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="messageLabel" style="-fx-font-weight: bold;"/>
+        </HBox>
+        <ScrollPane fitToWidth="true" fitToHeight="true" VBox.vgrow="ALWAYS" style="-fx-background-color: transparent; -fx-background: transparent; -fx-border-width: 0;">
+            <GridPane fx:id="availabilityGrid" alignment="TOP_LEFT" hgap="8" vgap="8" style="-fx-background-color: transparent;"/>
+        </ScrollPane>
+    </VBox>
 </VBox>

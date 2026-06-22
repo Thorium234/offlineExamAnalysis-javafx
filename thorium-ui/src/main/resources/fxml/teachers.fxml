@@ -28,9 +28,9 @@
         <CheckBox fx:id="activeCheck" text="Active" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
     </GridPane>
     <HBox spacing="8">
-        <Button text="Save" onAction="#onSave" defaultButton="true"/>
-        <Button text="Delete" onAction="#onDelete"/>
-        <Button text="Clear" onAction="#onClear"/>
+        <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true"/>
+        <Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/>
+        <Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
     </HBox>
     <Label fx:id="messageLabel"/>
 </VBox>

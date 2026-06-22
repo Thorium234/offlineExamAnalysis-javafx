@@ -2,6 +2,7 @@ package com.thorium.ui.controller;
 
 import com.thorium.application.dto.*;
 import com.thorium.ui.di.AppContext;
+import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -19,11 +20,17 @@ public class AssignmentManagementController {
     @FXML private ComboBox<ClassStreamDto> classCombo;
     @FXML private Spinner<Integer> lessonsSpinner;
     @FXML private Label messageLabel;
+    @FXML private Button saveBtn;
+    @FXML private Button deleteBtn;
+    @FXML private Button clearBtn;
 
     private Long editingId;
 
     @FXML
     private void initialize() {
+        IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#16a34a");
+        IconUtil.addIcon(deleteBtn, IconUtil.DELETE, "#dc2626");
+        IconUtil.addIcon(clearBtn, IconUtil.CLEAR, "#64748b");
         teacherColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().teacherName()));
         subjectColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().subjectName()));
         classColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().classStreamName()));

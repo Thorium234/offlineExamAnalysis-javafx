@@ -11,6 +11,7 @@ import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
+import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
 import com.thorium.infrastructure.ApplicationBootstrap;
 
 import java.nio.file.Path;
@@ -73,6 +74,10 @@ public final class AppContext {
 
     public GenerateTimetableUseCase generateTimetableUseCase() {
         return bootstrap.generateTimetableUseCase();
+    }
+
+    public TimetableEditorUseCase timetableEditorUseCase() {
+        return bootstrap.timetableEditorUseCase();
     }
 
     public RoomManagementUseCase roomManagementUseCase() {

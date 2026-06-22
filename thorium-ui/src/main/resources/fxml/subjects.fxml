@@ -26,9 +26,11 @@
         <CheckBox fx:id="doublePeriodCheck" text="Allows Double Period" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
         <Label text="Requires Double" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
         <CheckBox fx:id="requiresDoubleCheck" text="Requires Double Period" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
+        <Label text="Color" GridPane.columnIndex="0" GridPane.rowIndex="6"/>
+        <ColorPicker fx:id="colorPicker" GridPane.columnIndex="1" GridPane.rowIndex="6"/>
     </GridPane>
     <HBox spacing="8">
-        <Button text="Save" onAction="#onSave"/><Button text="Delete" onAction="#onDelete"/><Button text="Clear" onAction="#onClear"/>
+        <Button fx:id="saveBtn" text="Save" onAction="#onSave"/><Button fx:id="deleteBtn" text="Delete" onAction="#onDelete"/><Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
     </HBox>
     <Label fx:id="messageLabel"/>
 </VBox>
