@@ -51,8 +51,8 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
             }
 
             String entrySql = """
-                    INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number)
-                    VALUES (?, ?, ?, ?)
+                    INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id)
+                    VALUES (?, ?, ?, ?, ?)
                     """;
             try (PreparedStatement ps = conn.prepareStatement(entrySql, Statement.RETURN_GENERATED_KEYS)) {
                 for (TimetableEntry entry : entries) {
@@ -60,6 +60,11 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
                     ps.setLong(2, entry.getTeachingAssignmentId());
                     ps.setString(3, entry.getDayOfWeek().name());
                     ps.setInt(4, entry.getPeriodNumber());
+                    if (entry.getRoomId() != null) {
+                        ps.setLong(5, entry.getRoomId());
+                    } else {
+                        ps.setNull(5, Types.INTEGER);
+                    }
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -149,6 +154,77 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
     }
 
     @Override
+    public void deleteEntry(Long entryId) {
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM timetable_entries WHERE id = ?")) {
+            ps.setLong(1, entryId);
+            ps.executeUpdate();
+            commit(conn);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to delete timetable entry", e);
+        }
+    }
+
+    @Override
+    public TimetableEntry saveEntry(TimetableEntry entry) {
+        try (Connection conn = connection()) {
+            if (entry.getId() == null) {
+                insertEntry(conn, entry);
+            } else {
+                updateEntry(conn, entry);
+            }
+            commit(conn);
+            return entry;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save timetable entry", e);
+        }
+    }
+
+    private void insertEntry(Connection conn, TimetableEntry entry) throws SQLException {
+        String sql = """
+                INSERT INTO timetable_entries (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+            ps.setLong(1, entry.getTimetableId());
+            ps.setLong(2, entry.getTeachingAssignmentId());
+            ps.setString(3, entry.getDayOfWeek().name());
+            ps.setInt(4, entry.getPeriodNumber());
+            if (entry.getRoomId() != null) {
+                ps.setLong(5, entry.getRoomId());
+            } else {
+                ps.setNull(5, Types.INTEGER);
+            }
+            ps.executeUpdate();
+            try (ResultSet keys = ps.getGeneratedKeys()) {
+                if (keys.next()) {
+                    entry.setId(keys.getLong(1));
+                }
+            }
+        }
+    }
+
+    private void updateEntry(Connection conn, TimetableEntry entry) throws SQLException {
+        String sql = """
+                UPDATE timetable_entries
+                SET teaching_assignment_id=?, day_of_week=?, period_number=?, room_id=?
+                WHERE id=?
+                """;
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setLong(1, entry.getTeachingAssignmentId());
+            ps.setString(2, entry.getDayOfWeek().name());
+            ps.setInt(3, entry.getPeriodNumber());
+            if (entry.getRoomId() != null) {
+                ps.setLong(4, entry.getRoomId());
+            } else {
+                ps.setNull(4, Types.INTEGER);
+            }
+            ps.setLong(5, entry.getId());
+            ps.executeUpdate();
+        }
+    }
+
+    @Override
     public void deleteById(Long id) {
         try (Connection conn = connection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM timetables WHERE id = ?")) {
@@ -177,6 +253,10 @@ public class SqliteTimetableRepository extends AbstractRepository implements Tim
         entry.setTeachingAssignmentId(rs.getLong("teaching_assignment_id"));
         entry.setDayOfWeek(DayOfWeek.fromString(rs.getString("day_of_week")));
         entry.setPeriodNumber(rs.getInt("period_number"));
+        long roomId = rs.getLong("room_id");
+        if (!rs.wasNull()) {
+            entry.setRoomId(roomId);
+        }
         return entry;
     }
 }

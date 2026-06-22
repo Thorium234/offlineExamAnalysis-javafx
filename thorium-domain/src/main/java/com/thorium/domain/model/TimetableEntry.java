@@ -11,16 +11,19 @@ public class TimetableEntry {
     private Long teachingAssignmentId;
     private DayOfWeek dayOfWeek;
     private int periodNumber;
+    private Long roomId;
 
     public TimetableEntry() {
     }
 
-    public TimetableEntry(Long id, Long timetableId, Long teachingAssignmentId, DayOfWeek dayOfWeek, int periodNumber) {
+    public TimetableEntry(Long id, Long timetableId, Long teachingAssignmentId, DayOfWeek dayOfWeek,
+                          int periodNumber, Long roomId) {
         this.id = id;
         this.timetableId = timetableId;
         this.teachingAssignmentId = teachingAssignmentId;
         this.dayOfWeek = dayOfWeek;
         this.periodNumber = periodNumber;
+        this.roomId = roomId;
     }
 
     public Long getId() {
@@ -61,6 +64,14 @@ public class TimetableEntry {
 
     public void setPeriodNumber(int periodNumber) {
         this.periodNumber = periodNumber;
+    }
+
+    public Long getRoomId() {
+        return roomId;
+    }
+
+    public void setRoomId(Long roomId) {
+        this.roomId = roomId;
     }
 
     public ScheduleSlot toSlot() {

@@ -3,7 +3,7 @@ package com.thorium.application.mapper;
 import com.thorium.application.dto.*;
 import com.thorium.domain.model.*;
 
-import java.time.format.DateTimeFormatter;
+import com.thorium.domain.value.SubjectColorPalette;
 
 import java.time.format.DateTimeFormatter;
 
@@ -44,7 +44,8 @@ public final class EntityMapper {
                 subject.isExaminable(),
                 subject.getCbcDefaultLessons(),
                 subject.isAllowsDoublePeriod(),
-                subject.isRequiresDoublePeriod()
+                subject.isRequiresDoublePeriod(),
+                SubjectColorPalette.resolveColor(subject.getId(), subject.getColor())
         );
     }
 
@@ -57,6 +58,7 @@ public final class EntityMapper {
         subject.setCbcDefaultLessons(dto.cbcDefaultLessons());
         subject.setAllowsDoublePeriod(dto.allowsDoublePeriod());
         subject.setRequiresDoublePeriod(dto.requiresDoublePeriod());
+        subject.setColor(dto.color());
         return subject;
     }
 

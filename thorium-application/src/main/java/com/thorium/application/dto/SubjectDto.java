@@ -7,6 +7,7 @@ public record SubjectDto(
         boolean examinable,
         int cbcDefaultLessons,
         boolean allowsDoublePeriod,
-        boolean requiresDoublePeriod
+        boolean requiresDoublePeriod,
+        String color
 ) {
 }

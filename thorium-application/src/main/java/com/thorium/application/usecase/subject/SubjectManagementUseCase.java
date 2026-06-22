@@ -4,6 +4,7 @@ import com.thorium.application.dto.SubjectDto;
 import com.thorium.application.mapper.EntityMapper;
 import com.thorium.application.port.SubjectRepository;
 import com.thorium.domain.model.Subject;
+import com.thorium.domain.value.SubjectColorPalette;
 
 import java.util.List;
 
@@ -18,6 +19,10 @@ public class SubjectManagementUseCase {
     public SubjectDto create(SubjectDto dto) {
         validate(dto);
         Subject subject = EntityMapper.toEntity(dto);
+        if (subject.getColor() == null || subject.getColor().isBlank()) {
+            subject.setColor(SubjectColorPalette.colorForSubject(
+                    subject.getId() != null ? subject.getId() : System.nanoTime()));
+        }
         if (subject.isExaminable() && subject.getCbcDefaultLessons() <= 0) {
             subject.setCbcDefaultLessons(5);
         }

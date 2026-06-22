@@ -3,6 +3,7 @@ package com.thorium.domain.constraint;
 import com.thorium.domain.model.ScheduleSlot;
 import com.thorium.domain.model.Subject;
 import com.thorium.domain.model.TeachingAssignment;
+import com.thorium.domain.model.TimetableEntry;
 import com.thorium.domain.scheduling.PlacedLesson;
 import com.thorium.domain.scheduling.PartialSchedule;
 import com.thorium.domain.scheduling.SchedulingContext;
@@ -18,13 +19,18 @@ public class HardConstraintValidator {
 
     public boolean canPlace(TeachingAssignment assignment, ScheduleSlot slot,
                             PartialSchedule schedule, SchedulingContext context) {
+        return canPlace(assignment, slot, schedule, context, null);
+    }
+
+    public boolean canPlace(TeachingAssignment assignment, ScheduleSlot slot,
+                            PartialSchedule schedule, SchedulingContext context, Long excludeEntryId) {
         if (!isTeacherAvailable(assignment, slot, context)) {
             return false;
         }
-        if (isTeacherBusy(assignment, slot, schedule)) {
+        if (isTeacherBusy(assignment, slot, schedule, excludeEntryId)) {
             return false;
         }
-        if (isClassBusy(assignment, slot, schedule)) {
+        if (isClassBusy(assignment, slot, schedule, excludeEntryId)) {
             return false;
         }
         if (violatesCbcNoDouble(assignment, slot, schedule, context)) {
@@ -33,8 +39,25 @@ public class HardConstraintValidator {
         if (violatesRequiredDouble(assignment, slot, schedule, context)) {
             return false;
         }
-        if (exceedsWeeklyCount(assignment, schedule)) {
+        if (exceedsWeeklyCount(assignment, schedule, excludeEntryId)) {
             return false;
+        }
+        return true;
+    }
+
+    public boolean isRoomAvailable(Long roomId, ScheduleSlot slot, List<TimetableEntry> entries, Long excludeEntryId) {
+        if (roomId == null) {
+            return true;
+        }
+        for (TimetableEntry entry : entries) {
+            if (excludeEntryId != null && excludeEntryId.equals(entry.getId())) {
+                continue;
+            }
+            if (roomId.equals(entry.getRoomId())
+                    && entry.getDayOfWeek() == slot.dayOfWeek()
+                    && entry.getPeriodNumber() == slot.periodNumber()) {
+                return false;
+            }
         }
         return true;
     }
@@ -107,15 +130,31 @@ public class HardConstraintValidator {
     }
 
     private boolean isTeacherBusy(TeachingAssignment assignment, ScheduleSlot slot, PartialSchedule schedule) {
+        return isTeacherBusy(assignment, slot, schedule, null);
+    }
+
+    private boolean isTeacherBusy(TeachingAssignment assignment, ScheduleSlot slot,
+                                  PartialSchedule schedule, Long excludeEntryId) {
         return schedule.placedLessons().stream()
-                .anyMatch(p -> p.assignment().getTeacherId().equals(assignment.getTeacherId())
+                .anyMatch(p -> !matchesExcludedEntry(p, excludeEntryId)
+                        && p.assignment().getTeacherId().equals(assignment.getTeacherId())
                         && p.slot().equals(slot));
     }
 
     private boolean isClassBusy(TeachingAssignment assignment, ScheduleSlot slot, PartialSchedule schedule) {
+        return isClassBusy(assignment, slot, schedule, null);
+    }
+
+    private boolean isClassBusy(TeachingAssignment assignment, ScheduleSlot slot,
+                                PartialSchedule schedule, Long excludeEntryId) {
         return schedule.placedLessons().stream()
-                .anyMatch(p -> p.assignment().getClassStreamId().equals(assignment.getClassStreamId())
+                .anyMatch(p -> !matchesExcludedEntry(p, excludeEntryId)
+                        && p.assignment().getClassStreamId().equals(assignment.getClassStreamId())
                         && p.slot().equals(slot));
+    }
+
+    private boolean matchesExcludedEntry(PlacedLesson placed, Long excludeEntryId) {
+        return excludeEntryId != null && excludeEntryId.equals(placed.entryId());
     }
 
     private boolean violatesCbcNoDouble(TeachingAssignment assignment, ScheduleSlot slot,
@@ -190,7 +229,12 @@ public class HardConstraintValidator {
     }
 
     private boolean exceedsWeeklyCount(TeachingAssignment assignment, PartialSchedule schedule) {
+        return exceedsWeeklyCount(assignment, schedule, null);
+    }
+
+    private boolean exceedsWeeklyCount(TeachingAssignment assignment, PartialSchedule schedule, Long excludeEntryId) {
         long count = schedule.placedLessons().stream()
+                .filter(p -> !matchesExcludedEntry(p, excludeEntryId))
                 .filter(p -> p.assignment().getId().equals(assignment.getId()))
                 .count();
         return count >= assignment.getLessonsPerWeek();

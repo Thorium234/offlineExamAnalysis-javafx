@@ -3,10 +3,12 @@ package com.thorium.application.usecase.timetable;
 import com.thorium.application.dto.TimetableDto;
 import com.thorium.application.dto.TimetableEntryDto;
 import com.thorium.application.port.*;
+import com.thorium.application.util.NameFormatter;
 import com.thorium.domain.model.*;
 import com.thorium.domain.scheduling.SchedulingContext;
 import com.thorium.domain.scheduling.TimetableGenerationResult;
 import com.thorium.domain.scheduling.TimetableGenerator;
+import com.thorium.domain.value.SubjectColorPalette;
 import com.thorium.domain.value.TimetableStatus;
 
 import java.time.LocalDateTime;
@@ -23,6 +25,7 @@ public class GenerateTimetableUseCase {
     private final TeacherAvailabilityRepository availabilityRepository;
     private final PeriodRepository periodRepository;
     private final ConstraintRepository constraintRepository;
+    private final RoomRepository roomRepository;
     private final TimetableGenerator generator;
 
     public GenerateTimetableUseCase(TimetableRepository timetableRepository,
@@ -32,7 +35,8 @@ public class GenerateTimetableUseCase {
                                     ClassStreamRepository classStreamRepository,
                                     TeacherAvailabilityRepository availabilityRepository,
                                     PeriodRepository periodRepository,
-                                    ConstraintRepository constraintRepository) {
+                                    ConstraintRepository constraintRepository,
+                                    RoomRepository roomRepository) {
         this.timetableRepository = timetableRepository;
         this.assignmentRepository = assignmentRepository;
         this.teacherRepository = teacherRepository;
@@ -41,6 +45,7 @@ public class GenerateTimetableUseCase {
         this.availabilityRepository = availabilityRepository;
         this.periodRepository = periodRepository;
         this.constraintRepository = constraintRepository;
+        this.roomRepository = roomRepository;
         this.generator = new TimetableGenerator();
     }
 
@@ -116,16 +121,24 @@ public class GenerateTimetableUseCase {
     private TimetableEntryDto toEntryDto(TimetableEntry entry) {
         TeachingAssignment assignment = assignmentRepository.findById(entry.getTeachingAssignmentId())
                 .orElseThrow();
-        String teacherName = teacherRepository.findById(assignment.getTeacherId()).map(Teacher::getName).orElse("");
-        String subjectName = subjectRepository.findById(assignment.getSubjectId()).map(Subject::getName).orElse("");
-        String className = classStreamRepository.findById(assignment.getClassStreamId())
-                .map(ClassStream::getDisplayName).orElse("");
+        Teacher teacher = teacherRepository.findById(assignment.getTeacherId()).orElseThrow();
+        Subject subject = subjectRepository.findById(assignment.getSubjectId()).orElseThrow();
+        ClassStream classStream = classStreamRepository.findById(assignment.getClassStreamId()).orElseThrow();
+        String roomCode = entry.getRoomId() != null
+                ? roomRepository.findById(entry.getRoomId()).map(Room::getCode).orElse(null)
+                : null;
         return new TimetableEntryDto(
                 entry.getId(),
                 entry.getTeachingAssignmentId(),
-                teacherName,
-                subjectName,
-                className,
+                teacher.getName(),
+                NameFormatter.initials(teacher.getName()),
+                subject.getName(),
+                subject.getCode(),
+                SubjectColorPalette.resolveColor(subject.getId(), subject.getColor()),
+                classStream.getDisplayName(),
+                classStream.getId(),
+                roomCode,
+                entry.getRoomId(),
                 entry.getDayOfWeek(),
                 entry.getPeriodNumber()
         );

@@ -20,6 +20,10 @@ public interface TimetableRepository {
 
     void deleteById(Long id);
 
+    void deleteEntry(Long entryId);
+
+    TimetableEntry saveEntry(TimetableEntry entry);
+
     record TimetableWithEntries(Timetable timetable, List<TimetableEntry> entries) {
     }
 }

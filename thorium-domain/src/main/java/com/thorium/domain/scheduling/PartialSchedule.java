@@ -56,6 +56,9 @@ public final class PartialSchedule {
             entry.setTeachingAssignmentId(placed.assignment().getId());
             entry.setDayOfWeek(placed.slot().dayOfWeek());
             entry.setPeriodNumber(placed.slot().periodNumber());
+            if (placed.entryId() != null) {
+                entry.setId(placed.entryId());
+            }
             entries.add(entry);
         }
         return entries;

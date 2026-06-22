@@ -12,6 +12,7 @@ import com.thorium.application.usecase.room.RoomManagementUseCase;
 import com.thorium.application.usecase.subject.SubjectManagementUseCase;
 import com.thorium.application.usecase.teacher.TeacherManagementUseCase;
 import com.thorium.application.usecase.timetable.GenerateTimetableUseCase;
+import com.thorium.application.usecase.timetable.TimetableEditorUseCase;
 import com.thorium.infrastructure.export.CompositeTimetableExporter;
 import com.thorium.infrastructure.export.ExcelTimetableExporter;
 import com.thorium.infrastructure.export.PdfTimetableExporter;
@@ -93,7 +94,15 @@ public final class ApplicationBootstrap {
     public GenerateTimetableUseCase generateTimetableUseCase() {
         return new GenerateTimetableUseCase(
                 timetableRepository, assignmentRepository, teacherRepository, subjectRepository,
-                classStreamRepository, availabilityRepository, periodRepository, constraintRepository);
+                classStreamRepository, availabilityRepository, periodRepository, constraintRepository,
+                roomRepository);
+    }
+
+    public TimetableEditorUseCase timetableEditorUseCase() {
+        return new TimetableEditorUseCase(
+                timetableRepository, assignmentRepository, teacherRepository, subjectRepository,
+                classStreamRepository, availabilityRepository, periodRepository, constraintRepository,
+                roomRepository);
     }
 
     public RoomManagementUseCase roomManagementUseCase() {

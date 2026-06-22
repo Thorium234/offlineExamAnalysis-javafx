@@ -5,6 +5,10 @@ import com.thorium.domain.model.TeachingAssignment;
 
 public record PlacedLesson(
         TeachingAssignment assignment,
-        ScheduleSlot slot
+        ScheduleSlot slot,
+        Long entryId
 ) {
+    public PlacedLesson(TeachingAssignment assignment, ScheduleSlot slot) {
+        this(assignment, slot, null);
+    }
 }

@@ -11,12 +11,14 @@ public class Subject {
     private int cbcDefaultLessons;
     private boolean allowsDoublePeriod;
     private boolean requiresDoublePeriod;
+    private String color;
 
     public Subject() {
         this.cbcDefaultLessons = 5;
     }
 
-    public Subject(Long id, String code, String name, boolean examinable, int cbcDefaultLessons, boolean allowsDoublePeriod, boolean requiresDoublePeriod) {
+    public Subject(Long id, String code, String name, boolean examinable, int cbcDefaultLessons,
+                   boolean allowsDoublePeriod, boolean requiresDoublePeriod, String color) {
         this.id = id;
         this.code = code;
         this.name = name;
@@ -24,6 +26,7 @@ public class Subject {
         this.cbcDefaultLessons = cbcDefaultLessons;
         this.allowsDoublePeriod = allowsDoublePeriod;
         this.requiresDoublePeriod = requiresDoublePeriod;
+        this.color = color;
     }
 
     public Long getId() {
@@ -80,6 +83,14 @@ public class Subject {
 
     public void setRequiresDoublePeriod(boolean requiresDoublePeriod) {
         this.requiresDoublePeriod = requiresDoublePeriod;
+    }
+
+    public String getColor() {
+        return color;
+    }
+
+    public void setColor(String color) {
+        this.color = color;
     }
 
     public boolean isCbcSubject() {
