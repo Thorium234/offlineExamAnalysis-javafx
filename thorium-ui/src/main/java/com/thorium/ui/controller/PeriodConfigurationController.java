@@ -13,7 +13,6 @@ import javafx.scene.control.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Optional;
 
 public class PeriodConfigurationController {
 
@@ -24,10 +23,13 @@ public class PeriodConfigurationController {
     @FXML private TableColumn<PeriodDto, String> labelColumn;
     @FXML private TableColumn<PeriodDto, String> startColumn;
     @FXML private TableColumn<PeriodDto, String> endColumn;
+    @FXML private TableColumn<PeriodDto, String> typeColumn;
     @FXML private Spinner<Integer> numberSpinner;
     @FXML private TextField labelField;
     @FXML private ComboBox<String> startCombo;
     @FXML private ComboBox<String> endCombo;
+    @FXML private ComboBox<String> typeCombo;
+    @FXML private ComboBox<BreakDto> breakCombo;
     @FXML private Label messageLabel;
     @FXML private Button saveBtn;
     @FXML private Button deleteBtn;
@@ -48,16 +50,42 @@ public class PeriodConfigurationController {
         labelColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().label()));
         startColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().startTime()));
         endColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().endTime()));
-        numberSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 1));
+        typeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().type()));
+        numberSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 20, 1));
+        typeCombo.getItems().addAll("LESSON", "BREAK");
+        breakCombo.setCellFactory(lv -> new ListCell<>() {
+            @Override
+            protected void updateItem(BreakDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name());
+            }
+        });
+        breakCombo.setButtonCell(new ListCell<>() {
+            @Override
+            protected void updateItem(BreakDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name());
+            }
+        });
         populateTimeOptions();
         loadSettings();
         numberSpinner.valueProperty().addListener((obs, o, n) -> autoComputeTimes(n));
         startCombo.valueProperty().addListener((obs, o, n) -> checkOverlap(n, endCombo.getValue()));
         endCombo.valueProperty().addListener((obs, o, n) -> checkOverlap(startCombo.getValue(), n));
+        typeCombo.valueProperty().addListener((obs, o, n) -> updateBreakComboVisibility());
         refreshTable();
         periodTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
         });
+    }
+
+    private void updateBreakComboVisibility() {
+        boolean isBreak = "BREAK".equals(typeCombo.getValue());
+        breakCombo.setVisible(isBreak);
+        breakCombo.setManaged(isBreak);
+        if (isBreak) {
+            breakCombo.setItems(FXCollections.observableArrayList(AppContext.get().breakConfigurationUseCase().findAll()));
+        }
     }
 
     private void populateTimeOptions() {
@@ -72,6 +100,7 @@ public class PeriodConfigurationController {
 
     private void loadSettings() {
         settings = AppContext.get().schoolSettingsUseCase().getSettings();
+        updateBreakComboVisibility();
         if (settings != null && numberSpinner.getValue() != null) {
             autoComputeTimes(numberSpinner.getValue());
         }
@@ -146,13 +175,18 @@ public class PeriodConfigurationController {
         try {
             String start = startCombo.getValue();
             String end = endCombo.getValue();
-            String conflict = findBreakConflict(start, end);
-            if (conflict != null) {
-                showMessage(conflict, true);
-                return;
+            String type = typeCombo.getValue();
+            if (type == null) type = "LESSON";
+            if (!"BREAK".equals(type)) {
+                String conflict = findBreakConflict(start, end);
+                if (conflict != null) {
+                    showMessage(conflict, true);
+                    return;
+                }
             }
             int periodNumber = numberSpinner.getValue();
-            PeriodDto dto = new PeriodDto(editingId, periodNumber, start, end, labelField.getText().trim());
+            Long breakId = "BREAK".equals(type) && breakCombo.getValue() != null ? breakCombo.getValue().id() : null;
+            PeriodDto dto = new PeriodDto(editingId, periodNumber, start, end, labelField.getText().trim(), type, breakId);
             if (editingId == null) AppContext.get().periodConfigurationUseCase().create(dto);
             else AppContext.get().periodConfigurationUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
@@ -210,6 +244,12 @@ public class PeriodConfigurationController {
         labelField.setText(dto.label());
         startCombo.setValue(dto.startTime());
         endCombo.setValue(dto.endTime());
+        typeCombo.setValue(dto.type());
+        if ("BREAK".equals(dto.type()) && dto.breakId() != null) {
+            List<BreakDto> allBreaks = AppContext.get().breakConfigurationUseCase().findAll();
+            breakCombo.getItems().setAll(allBreaks);
+            allBreaks.stream().filter(b -> b.id().equals(dto.breakId())).findFirst().ifPresent(b -> breakCombo.setValue(b));
+        }
     }
 
     private void clearForm() {
@@ -218,6 +258,8 @@ public class PeriodConfigurationController {
         labelField.clear();
         startCombo.setValue(null);
         endCombo.setValue(null);
+        typeCombo.setValue("LESSON");
+        breakCombo.setValue(null);
         periodTable.getSelectionModel().clearSelection();
     }
 

@@ -5,6 +5,8 @@ public record PeriodDto(
         int periodNumber,
         String startTime,
         String endTime,
-        String label
+        String label,
+        String type,
+        Long breakId
 ) {
 }

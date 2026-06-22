@@ -19,7 +19,7 @@ public class SettingsController {
     @FXML
     private void initialize() {
         IconUtil.addIcon(saveBtn, IconUtil.SAVE, "#2563eb");
-        totalPeriodsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 8));
+        totalPeriodsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 20, 15));
         durationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(20, 60, 40));
         populateTimeOptions(startTimeCombo);
         populateTimeOptions(endTimeCombo);

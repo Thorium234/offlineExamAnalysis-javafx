@@ -310,34 +310,26 @@ public class TimetableViewerController {
             timetableGrid.add(headerPane, c + 1, 0);
         }
 
-        // Set up mapping of periods and breaks to grid rows
+        // Set up mapping of periods to grid rows
         int currentRow = 1;
         Map<Integer, Integer> periodToRowMap = new HashMap<>();
-        Map<Integer, BreakDto> breakRows = new HashMap<>(); // row index -> BreakDto
+        Map<Integer, PeriodDto> breakRows = new HashMap<>();
 
         List<PeriodDto> periods = currentState.periods();
-        List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
 
         for (PeriodDto period : periods) {
             periodToRowMap.put(period.periodNumber(), currentRow);
-            final int pNum = period.periodNumber();
-
-            Optional<BreakDto> activeBreak = breaks.stream()
-                    .filter(b -> !b.isBeforePeriodOne() && b.afterPeriod() == pNum - 1)
-                    .findFirst();
-
             currentRow++;
-            if (activeBreak.isPresent()) {
-                breakRows.put(currentRow, activeBreak.get());
-                currentRow++;
+            if ("BREAK".equals(period.type())) {
+                breakRows.put(currentRow, period);
             }
         }
 
         // Draw Period Rows
         for (PeriodDto period : periods) {
+            if ("BREAK".equals(period.type())) continue;
             int r = periodToRowMap.get(period.periodNumber());
 
-            // Left Header (Column 0)
             Label pLabel = new Label(period.label());
             pLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #1e293b; -fx-font-size: 12px;");
             Label timeLabel = new Label(period.startTime() + " - " + period.endTime());
@@ -349,7 +341,6 @@ public class TimetableViewerController {
             pBox.setStyle("-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-width: 0 1 1 0; -fx-alignment: center;");
             timetableGrid.add(pBox, 0, r);
 
-            // Columns 1 to 5 (Monday to Friday)
             for (int c = 0; c < days.size(); c++) {
                 DayOfWeek day = days.get(c);
                 LessonCardDto matchedLesson = findMatchedLesson(day, period.periodNumber());
@@ -364,17 +355,16 @@ public class TimetableViewerController {
             }
         }
 
-        // Draw Break Rows (horizontal dividers)
+        // Draw Break Rows (full-width dividers)
         for (var entry : breakRows.entrySet()) {
             int r = entry.getKey();
-            BreakDto brk = entry.getValue();
+            PeriodDto brk = entry.getValue();
 
-            Label breakLabel = new Label("☕ " + brk.name() + " (" + brk.durationMinutes() + " mins)");
+            Label breakLabel = new Label("\u2615 " + brk.label() + " (" + brk.startTime() + " - " + brk.endTime() + ")");
             breakLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #475569; -fx-font-size: 11px;");
             StackPane breakPane = new StackPane(breakLabel);
             breakPane.setStyle("-fx-background-color: #f1f5f9; -fx-background-radius: 4; -fx-padding: 6; -fx-alignment: center;");
-            
-            // Span break cell across whole row (0 to 5)
+
             timetableGrid.add(breakPane, 0, r, 6, 1);
         }
     }

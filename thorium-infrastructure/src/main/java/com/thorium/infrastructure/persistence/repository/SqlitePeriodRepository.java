@@ -35,7 +35,7 @@ public class SqlitePeriodRepository extends AbstractRepository implements Period
     }
 
     private void insert(Connection conn, Period period) throws SQLException {
-        String sql = "INSERT INTO periods (period_number, start_time, end_time, label) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bind(ps, period);
             ps.executeUpdate();
@@ -48,10 +48,10 @@ public class SqlitePeriodRepository extends AbstractRepository implements Period
     }
 
     private void update(Connection conn, Period period) throws SQLException {
-        String sql = "UPDATE periods SET period_number=?, start_time=?, end_time=?, label=? WHERE id=?";
+        String sql = "UPDATE periods SET period_number=?, start_time=?, end_time=?, label=?, type=?, break_id=? WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, period);
-            ps.setLong(5, period.getId());
+            ps.setLong(7, period.getId());
             ps.executeUpdate();
         }
     }
@@ -61,6 +61,12 @@ public class SqlitePeriodRepository extends AbstractRepository implements Period
         ps.setString(2, period.getStartTime().format(TIME_FORMAT));
         ps.setString(3, period.getEndTime().format(TIME_FORMAT));
         ps.setString(4, period.getLabel());
+        ps.setString(5, period.getType());
+        if (period.getBreakId() != null) {
+            ps.setLong(6, period.getBreakId());
+        } else {
+            ps.setNull(6, java.sql.Types.INTEGER);
+        }
     }
 
     @Override
@@ -113,12 +119,16 @@ public class SqlitePeriodRepository extends AbstractRepository implements Period
     }
 
     private Period map(ResultSet rs) throws SQLException {
+        long breakIdRaw = rs.getLong("break_id");
+        Long breakId = rs.wasNull() ? null : breakIdRaw;
         return new Period(
                 rs.getLong("id"),
                 rs.getInt("period_number"),
                 LocalTime.parse(rs.getString("start_time"), TIME_FORMAT),
                 LocalTime.parse(rs.getString("end_time"), TIME_FORMAT),
-                rs.getString("label")
+                rs.getString("label"),
+                rs.getString("type"),
+                breakId
         );
     }
 }

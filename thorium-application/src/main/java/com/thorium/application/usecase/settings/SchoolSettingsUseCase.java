@@ -33,8 +33,8 @@ public class SchoolSettingsUseCase {
     }
 
     private void validate(SchoolSettings settings) {
-        if (settings.getTotalPeriods() < 1 || settings.getTotalPeriods() > 12) {
-            throw new IllegalArgumentException("Total periods must be between 1 and 12");
+        if (settings.getTotalPeriods() < 1 || settings.getTotalPeriods() > 20) {
+            throw new IllegalArgumentException("Total periods must be between 1 and 20");
         }
         if (settings.getPeriodDurationMinutes() < 20 || settings.getPeriodDurationMinutes() > 60) {
             throw new IllegalArgumentException("Period duration must be between 20 and 60 minutes");

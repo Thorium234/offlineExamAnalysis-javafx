@@ -29,14 +29,18 @@ public class PeriodConfigurationUseCase {
 
     public PeriodDto create(PeriodDto dto) {
         Period period = toEntity(dto);
-        return EntityMapper.toDto(periodRepository.save(period));
+        Period saved = periodRepository.save(period);
+        syncBreakTimes(saved);
+        return EntityMapper.toDto(saved);
     }
 
     public PeriodDto update(PeriodDto dto) {
         if (dto.id() == null) {
             throw new IllegalArgumentException("Period id is required for update");
         }
-        return EntityMapper.toDto(periodRepository.save(toEntity(dto)));
+        Period saved = periodRepository.save(toEntity(dto));
+        syncBreakTimes(saved);
+        return EntityMapper.toDto(saved);
     }
 
     public void delete(Long id) {
@@ -61,49 +65,79 @@ public class PeriodConfigurationUseCase {
                 .sorted(Comparator.comparingInt(BreakDto::sortOrder))
                 .toList();
 
-        int numberOfPeriods = settings.totalPeriods();
         int periodDuration = settings.periodDurationMinutes();
-        LocalTime schoolStart = parseTime(settings.startTime(), "schoolStartTime");
-        LocalTime clockCursor = schoolStart;
+        LocalTime cursor = parseTime(settings.startTime(), "schoolStartTime");
         int periodCounter = 0;
+        int lessonCounter = 0;
 
-        // Process isBeforePeriodOne breaks (slotable → Period entries; non-slotable → advance cursor)
         for (BreakDto b : breaks) {
-            if (!b.isBeforePeriodOne()) continue;
-            if (b.slotable()) {
+            if (b.isBeforePeriodOne()) {
                 periodCounter++;
                 Period period = new Period();
                 period.setPeriodNumber(periodCounter);
-                period.setStartTime(clockCursor);
-                period.setEndTime(clockCursor.plusMinutes(b.durationMinutes()));
+                period.setStartTime(cursor);
+                period.setEndTime(cursor.plusMinutes(b.durationMinutes()));
                 period.setLabel(b.name());
+                period.setType(Period.TYPE_BREAK);
+                period.setBreakId(b.id());
                 periodRepository.save(period);
+                saveBreakTimes(b, cursor, cursor.plusMinutes(b.durationMinutes()));
+                cursor = cursor.plusMinutes(b.durationMinutes());
+            } else {
+                while (lessonCounter < b.afterPeriod()) {
+                    lessonCounter++;
+                    periodCounter++;
+                    Period period = new Period();
+                    period.setPeriodNumber(periodCounter);
+                    period.setStartTime(cursor);
+                    period.setEndTime(cursor.plusMinutes(periodDuration));
+                    period.setLabel("P" + lessonCounter);
+                    period.setType(Period.TYPE_LESSON);
+                    periodRepository.save(period);
+                    cursor = cursor.plusMinutes(periodDuration);
+                }
+
+                periodCounter++;
+                Period period = new Period();
+                period.setPeriodNumber(periodCounter);
+                period.setStartTime(cursor);
+                period.setEndTime(cursor.plusMinutes(b.durationMinutes()));
+                period.setLabel(b.name());
+                period.setType(Period.TYPE_BREAK);
+                period.setBreakId(b.id());
+                periodRepository.save(period);
+                saveBreakTimes(b, cursor, cursor.plusMinutes(b.durationMinutes()));
+                cursor = cursor.plusMinutes(b.durationMinutes());
             }
-            saveBreakTimes(b, clockCursor, clockCursor.plusMinutes(b.durationMinutes()));
-            clockCursor = clockCursor.plusMinutes(b.durationMinutes());
         }
 
-        // Process regular periods P1-P10 (periodNumber shifted by slotable count)
-        for (int p = 1; p <= numberOfPeriods; p++) {
+        int totalLessonSlots = 0;
+        for (BreakDto b : breaks) {
+            if (!b.isBeforePeriodOne() && b.afterPeriod() > totalLessonSlots) {
+                totalLessonSlots = b.afterPeriod();
+            }
+        }
+        while (lessonCounter < totalLessonSlots) {
+            lessonCounter++;
             periodCounter++;
-            LocalTime periodStart = clockCursor;
-            LocalTime periodEnd = clockCursor.plusMinutes(periodDuration);
             Period period = new Period();
             period.setPeriodNumber(periodCounter);
-            period.setStartTime(periodStart);
-            period.setEndTime(periodEnd);
-            period.setLabel("P" + p);
+            period.setStartTime(cursor);
+            period.setEndTime(cursor.plusMinutes(periodDuration));
+            period.setLabel("P" + lessonCounter);
+            period.setType(Period.TYPE_LESSON);
             periodRepository.save(period);
-            clockCursor = periodEnd;
-
-            for (BreakDto b : breaks) {
-                if (!b.isBeforePeriodOne() && b.afterPeriod() == p) {
-                    LocalTime breakEnd = clockCursor.plusMinutes(b.durationMinutes());
-                    saveBreakTimes(b, clockCursor, breakEnd);
-                    clockCursor = breakEnd;
-                }
-            }
+            cursor = cursor.plusMinutes(periodDuration);
         }
+    }
+
+    private void syncBreakTimes(Period period) {
+        if (!period.isBreak() || period.getBreakId() == null) return;
+        breakRepository.findById(period.getBreakId()).ifPresent(b -> {
+            b.setStartTime(period.getStartTime());
+            b.setEndTime(period.getEndTime());
+            breakRepository.save(b);
+        });
     }
 
     private void saveBreakTimes(BreakDto dto, LocalTime start, LocalTime end) {
@@ -119,6 +153,8 @@ public class PeriodConfigurationUseCase {
         period.setStartTime(parseTime(dto.startTime(), "startTime"));
         period.setEndTime(parseTime(dto.endTime(), "endTime"));
         period.setLabel(dto.label());
+        period.setType(dto.type());
+        period.setBreakId(dto.breakId());
         return period;
     }
 

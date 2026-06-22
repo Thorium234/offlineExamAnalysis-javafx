@@ -30,7 +30,8 @@ public class BreakConfigurationUseCase {
             throw new IllegalArgumentException("Break id is required for update");
         }
         validate(dto);
-        return EntityMapper.toDto(breakRepository.save(toEntity(dto)));
+        BreakPeriod saved = breakRepository.save(toEntity(dto));
+        return EntityMapper.toDto(saved);
     }
 
     public void delete(Long id) {

@@ -3,11 +3,8 @@ package com.thorium.domain.scheduling;
 import com.thorium.domain.model.BreakPeriod;
 import com.thorium.domain.model.Period;
 import com.thorium.domain.model.timeblock.BreakBlock;
-import com.thorium.domain.model.timeblock.EventBlock;
 import com.thorium.domain.model.timeblock.LessonBlock;
 import com.thorium.domain.model.timeblock.TimeBlock;
-
-import java.time.Duration;
 
 import java.time.LocalTime;
 import java.util.*;
@@ -17,11 +14,11 @@ public final class DailyTimelineGenerator {
     private DailyTimelineGenerator() {}
 
     public static List<TimeBlock> generate(List<Period> periods, List<BreakPeriod> breaks) {
-        return generate(periods, breaks, List.of(), null);
+        return generate(periods, breaks, null);
     }
 
     public static List<TimeBlock> generate(List<Period> periods, List<BreakPeriod> breaks,
-                                            List<EventBlock> prePeriodEvents, LocalTime schoolStartTimeOverride) {
+                                            LocalTime schoolStartTimeOverride) {
         List<TimeBlock> timeline = new ArrayList<>();
 
         Map<Integer, Period> periodMap = new TreeMap<>();
@@ -35,34 +32,6 @@ public final class DailyTimelineGenerator {
 
         int maxPeriod = periodMap.keySet().stream().mapToInt(Integer::intValue).max().orElse(0);
 
-        List<BreakPeriod> sortedBreaks = breaks.stream()
-                .sorted(Comparator.comparingInt(BreakPeriod::getSortOrder))
-                .toList();
-
-        for (BreakPeriod b : sortedBreaks) {
-            if (b.isBeforePeriodOne() && !b.isSlotable()) {
-                LocalTime start = b.getStartTime() != null ? b.getStartTime()
-                        : (schoolStartTimeOverride != null ? schoolStartTimeOverride : LocalTime.of(7, 10));
-                LocalTime end = b.getEndTime() != null ? b.getEndTime()
-                        : start.plusMinutes(b.getDurationMinutes());
-                timeline.add(new EventBlock(b.getName(), start, end, true));
-            }
-        }
-
-        int slotableShift = (int) sortedBreaks.stream()
-                .filter(b -> b.isBeforePeriodOne() && b.isSlotable())
-                .count();
-
-        Map<Integer, List<BreakPeriod>> breaksAfterPeriod = new HashMap<>();
-        for (BreakPeriod b : sortedBreaks) {
-            if (b.isBeforePeriodOne()) continue;
-            breaksAfterPeriod.computeIfAbsent(b.getAfterPeriod() + slotableShift, k -> new ArrayList<>()).add(b);
-        }
-
-        for (EventBlock ev : prePeriodEvents) {
-            timeline.add(ev);
-        }
-
         LocalTime cursor = schoolStartTimeOverride;
         boolean useCursor = (schoolStartTimeOverride != null);
 
@@ -71,22 +40,20 @@ public final class DailyTimelineGenerator {
 
             Period period = periodMap.get(pn);
 
-            if (useCursor) {
-                int duration = (int) Duration.between(period.getStartTime(), period.getEndTime()).toMinutes();
-                LessonBlock lesson = new LessonBlock(pn, cursor, cursor.plusMinutes(duration));
-                timeline.add(lesson);
-                cursor = lesson.endTime();
+            if (period.isBreak()) {
+                LocalTime start = useCursor ? cursor : period.getStartTime();
+                LocalTime end = useCursor ? start.plusMinutes(
+                        (int) java.time.Duration.between(period.getStartTime(), period.getEndTime()).toMinutes())
+                        : period.getEndTime();
+                timeline.add(new BreakBlock(period.getLabel(), start, end, 0));
+                cursor = end;
             } else {
-                timeline.add(new LessonBlock(pn, period.getStartTime(), period.getEndTime()));
-                cursor = period.getEndTime();
-            }
-
-            List<BreakPeriod> afterBreaks = breaksAfterPeriod.getOrDefault(pn, List.of());
-            for (BreakPeriod b : afterBreaks) {
-                LocalTime breakStart = cursor;
-                LocalTime breakEnd = breakStart.plusMinutes(b.getDurationMinutes());
-                timeline.add(new BreakBlock(b.getName(), breakStart, breakEnd, b.getAfterPeriod()));
-                cursor = breakEnd;
+                LocalTime start = useCursor ? cursor : period.getStartTime();
+                LocalTime end = useCursor ? start.plusMinutes(
+                        (int) java.time.Duration.between(period.getStartTime(), period.getEndTime()).toMinutes())
+                        : period.getEndTime();
+                timeline.add(new LessonBlock(pn, start, end));
+                cursor = end;
             }
         }
 

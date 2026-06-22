@@ -52,7 +52,9 @@ CREATE TABLE IF NOT EXISTS periods (
     period_number INTEGER NOT NULL UNIQUE CHECK (period_number > 0),
     start_time    TEXT    NOT NULL,
     end_time      TEXT    NOT NULL,
-    label         TEXT    NOT NULL
+    label         TEXT    NOT NULL,
+    type          TEXT    NOT NULL DEFAULT 'LESSON' CHECK (type IN ('LESSON', 'BREAK')),
+    break_id      INTEGER REFERENCES breaks(id) ON DELETE SET NULL
 );
 
 CREATE TABLE IF NOT EXISTS breaks (

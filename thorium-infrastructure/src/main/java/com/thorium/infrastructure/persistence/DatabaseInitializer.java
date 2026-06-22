@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 9;
+    private static final int SCHEMA_VERSION = 10;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -68,6 +68,10 @@ public class DatabaseInitializer {
             if (currentVersion < 9) {
                 runMigrationV9(statement);
                 setVersion(statement, 9);
+            }
+            if (currentVersion < 10) {
+                runMigrationV10(statement);
+                setVersion(statement, 10);
             }
 
             connection.commit();
@@ -221,6 +225,19 @@ public class DatabaseInitializer {
         statement.execute("ALTER TABLE teacher_availability_v2 RENAME TO teacher_availability");
     }
 
+    private void runMigrationV10(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE periods ADD COLUMN type TEXT NOT NULL DEFAULT 'LESSON' CHECK (type IN ('LESSON', 'BREAK'))");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+        try {
+            statement.execute("ALTER TABLE periods ADD COLUMN break_id INTEGER REFERENCES breaks(id) ON DELETE SET NULL");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+    }
+
     private void seedDefaults() {
         try (Connection connection = connectionProvider.getConnection();
              Statement statement = connection.createStatement()) {
@@ -228,34 +245,37 @@ public class DatabaseInitializer {
             var settingsCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM school_settings");
             if (settingsCount.next() && settingsCount.getInt(1) == 0) {
-                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, 10, '07:10', '18:45', 40)");
+                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, 15, '07:00', '18:25', 40)");
             }
 
             var breakCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM breaks");
             if (breakCount.next() && breakCount.getInt(1) == 0) {
-                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Assembly', 0, 50, 1, 1, 1, '07:10', '08:00')");
-                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Tea Break', 3, 20, 2, 0, 0, '10:00', '10:20')");
-                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Short Break', 5, 10, 3, 0, 0, '11:40', '11:50')");
-                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Lunch Break', 7, 50, 4, 0, 0, '13:10', '14:00')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Assembly', 0, 50, 1, 1, 1, '07:00', '07:50')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Tea Break', 3, 20, 2, 0, 0, '09:50', '10:10')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Short Break', 5, 10, 3, 0, 0, '11:20', '11:30')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Lunch Break', 7, 50, 4, 0, 0, '12:50', '13:40')");
                 statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, slotable, start_time, end_time) VALUES ('Games Time', 10, 165, 5, 0, 0, '16:00', '18:45')");
             }
 
             var periodCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM periods");
             if (periodCount.next() && periodCount.getInt(1) == 0) {
-                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label) VALUES (1, '07:10', '08:00', 'Assembly')");
-                LocalTime clock = LocalTime.of(8, 0);
-                for (int i = 2; i <= 11; i++) {
-                    LocalTime end = clock.plusMinutes(40);
-                    statement.execute(String.format(
-                            "INSERT INTO periods (period_number, start_time, end_time, label) VALUES (%d, '%s', '%s', 'P%d')",
-                            i, clock.format(TIME_FORMAT), end.format(TIME_FORMAT), i - 1));
-                    clock = end;
-                    if (i == 4) clock = clock.plusMinutes(20);       // Tea after P3
-                    else if (i == 6) clock = clock.plusMinutes(10);  // Short after P5
-                    else if (i == 8) clock = clock.plusMinutes(50);  // Lunch after P7
-                }
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (1, '07:00', '07:50', 'Assembly', 'BREAK', 1)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (2, '07:50', '08:30', 'P1', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (3, '08:30', '09:10', 'P2', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (4, '09:10', '09:50', 'P3', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (5, '09:50', '10:10', 'Tea Break', 'BREAK', 2)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (6, '10:10', '10:50', 'P4', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (7, '10:50', '11:20', 'P5', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (8, '11:20', '11:30', 'Short Break', 'BREAK', 3)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (9, '11:30', '12:10', 'P6', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (10, '12:10', '12:50', 'P7', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (11, '12:50', '13:40', 'Lunch Break', 'BREAK', 4)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (12, '13:40', '14:20', 'P8', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (13, '14:20', '15:00', 'P9', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (14, '15:00', '15:40', 'P10', 'LESSON', NULL)");
+                statement.execute("INSERT INTO periods (period_number, start_time, end_time, label, type, break_id) VALUES (15, '15:40', '18:25', 'Games Time', 'BREAK', 5)"); // 165 min
             }
 
             var constraintCount = connection.createStatement()

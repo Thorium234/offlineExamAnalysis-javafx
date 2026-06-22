@@ -5,11 +5,16 @@ import java.util.Objects;
 
 public class Period {
 
+    public static final String TYPE_LESSON = "LESSON";
+    public static final String TYPE_BREAK = "BREAK";
+
     private Long id;
     private int periodNumber;
     private LocalTime startTime;
     private LocalTime endTime;
     private String label;
+    private String type = TYPE_LESSON;
+    private Long breakId;
 
     public Period() {
     }
@@ -20,6 +25,17 @@ public class Period {
         this.startTime = startTime;
         this.endTime = endTime;
         this.label = label;
+        this.type = TYPE_LESSON;
+    }
+
+    public Period(Long id, int periodNumber, LocalTime startTime, LocalTime endTime, String label, String type, Long breakId) {
+        this.id = id;
+        this.periodNumber = periodNumber;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.label = label;
+        this.type = type;
+        this.breakId = breakId;
     }
 
     public Long getId() {
@@ -60,6 +76,26 @@ public class Period {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public Long getBreakId() {
+        return breakId;
+    }
+
+    public void setBreakId(Long breakId) {
+        this.breakId = breakId;
+    }
+
+    public boolean isBreak() {
+        return TYPE_BREAK.equals(type);
     }
 
     @Override

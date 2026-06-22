@@ -82,7 +82,9 @@ public final class EntityMapper {
                 period.getPeriodNumber(),
                 period.getStartTime().format(TIME_FORMAT),
                 period.getEndTime().format(TIME_FORMAT),
-                period.getLabel()
+                period.getLabel(),
+                period.getType(),
+                period.getBreakId()
         );
     }
 

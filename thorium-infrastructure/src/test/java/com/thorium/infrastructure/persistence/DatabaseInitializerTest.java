@@ -27,7 +27,7 @@ class DatabaseInitializerTest {
 
             try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM periods")) {
                 assertTrue(rs.next());
-                assertEquals(11, rs.getInt(1), "Default 11 periods should be seeded");
+                assertEquals(15, rs.getInt(1), "Default 15 periods should be seeded");
             }
 
             try (ResultSet rs = conn.createStatement().executeQuery("SELECT COUNT(*) FROM constraints")) {
