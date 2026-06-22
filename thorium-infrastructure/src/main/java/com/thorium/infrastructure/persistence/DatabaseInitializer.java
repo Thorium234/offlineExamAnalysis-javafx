@@ -188,8 +188,37 @@ public class DatabaseInitializer {
             if (!e.getMessage().contains("duplicate column")) throw e;
         }
         statement.execute("UPDATE breaks SET slotable = 1 WHERE name = 'Assembly'");
-        statement.execute("UPDATE timetable_entries SET period_number = period_number + 1");
-        statement.execute("UPDATE teacher_availability SET period_number = period_number + 1");
+        statement.execute("""
+                CREATE TABLE timetable_entries_v2 (
+                    id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+                    timetable_id           INTEGER NOT NULL REFERENCES timetables(id) ON DELETE CASCADE,
+                    teaching_assignment_id INTEGER NOT NULL REFERENCES teaching_assignments(id) ON DELETE CASCADE,
+                    day_of_week            TEXT    NOT NULL,
+                    period_number          INTEGER NOT NULL CHECK (period_number > 0),
+                    room_id                INTEGER REFERENCES rooms(id) ON DELETE SET NULL,
+                    slot_type              TEXT    NOT NULL DEFAULT 'PERIOD',
+                    break_id               INTEGER REFERENCES breaks(id) ON DELETE SET NULL,
+                    UNIQUE (timetable_id, teaching_assignment_id, day_of_week, period_number)
+                )
+                """);
+        statement.execute("INSERT INTO timetable_entries_v2 (timetable_id, teaching_assignment_id, day_of_week, period_number, room_id, slot_type) SELECT timetable_id, teaching_assignment_id, day_of_week, period_number + 1, room_id, 'PERIOD' FROM timetable_entries");
+        statement.execute("DROP TABLE timetable_entries");
+        statement.execute("ALTER TABLE timetable_entries_v2 RENAME TO timetable_entries");
+        statement.execute("CREATE INDEX IF NOT EXISTS idx_tt_entries_timetable ON timetable_entries(timetable_id)");
+        statement.execute("CREATE INDEX IF NOT EXISTS idx_tt_entries_slot ON timetable_entries(timetable_id, day_of_week, period_number)");
+        statement.execute("""
+                CREATE TABLE teacher_availability_v2 (
+                    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+                    teacher_id    INTEGER NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+                    day_of_week   TEXT    NOT NULL,
+                    period_number INTEGER NOT NULL CHECK (period_number > 0),
+                    available     INTEGER NOT NULL DEFAULT 1 CHECK (available IN (0, 1)),
+                    UNIQUE (teacher_id, day_of_week, period_number)
+                )
+                """);
+        statement.execute("INSERT INTO teacher_availability_v2 (teacher_id, day_of_week, period_number, available) SELECT teacher_id, day_of_week, period_number + 1, available FROM teacher_availability");
+        statement.execute("DROP TABLE teacher_availability");
+        statement.execute("ALTER TABLE teacher_availability_v2 RENAME TO teacher_availability");
     }
 
     private void seedDefaults() {
