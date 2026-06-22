@@ -13,6 +13,7 @@ import javafx.scene.control.*;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Optional;
 
 public class PeriodConfigurationController {
 
@@ -35,6 +36,7 @@ public class PeriodConfigurationController {
 
     private Long editingId;
     private SchoolSettingsDto settings;
+    private boolean suppressingAlert;
 
     @FXML
     private void initialize() {
@@ -50,6 +52,8 @@ public class PeriodConfigurationController {
         populateTimeOptions();
         loadSettings();
         numberSpinner.valueProperty().addListener((obs, o, n) -> autoComputeTimes(n));
+        startCombo.valueProperty().addListener((obs, o, n) -> checkOverlap(n, endCombo.getValue()));
+        endCombo.valueProperty().addListener((obs, o, n) -> checkOverlap(startCombo.getValue(), n));
         refreshTable();
         periodTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
@@ -91,6 +95,23 @@ public class PeriodConfigurationController {
         if (!endCombo.isFocused()) endCombo.setValue(end);
     }
 
+    private void checkOverlap(String startTime, String endTime) {
+        if (suppressingAlert || startTime == null || endTime == null) return;
+        String conflict = findBreakConflict(startTime, endTime);
+        if (conflict != null) {
+            suppressingAlert = true;
+            Alert alert = new Alert(Alert.AlertType.ERROR, conflict, ButtonType.OK);
+            alert.setTitle("Time Overlap Detected");
+            alert.setHeaderText("This period overlaps with a break");
+            alert.showAndWait().ifPresent(r -> {
+                if (r == ButtonType.OK) {
+                    autoComputeTimes(numberSpinner.getValue());
+                }
+            });
+            suppressingAlert = false;
+        }
+    }
+
     @FXML private void onSave() {
         try {
             String start = startCombo.getValue();
@@ -114,15 +135,12 @@ public class PeriodConfigurationController {
         LocalTime start = LocalTime.parse(startTime, TIME_FMT);
         LocalTime end = LocalTime.parse(endTime, TIME_FMT);
         List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
-        List<PeriodDto> periods = AppContext.get().periodConfigurationUseCase().findAll();
         for (BreakDto b : breaks) {
-            PeriodDto breakPeriod = periods.stream()
-                    .filter(p -> p.periodNumber() == b.afterPeriod()).findFirst().orElse(null);
-            if (breakPeriod == null) continue;
-            LocalTime breakStart = LocalTime.parse(breakPeriod.endTime(), TIME_FMT);
-            LocalTime breakEnd = breakStart.plusMinutes(b.durationMinutes());
+            if (b.startTime() == null || b.endTime() == null) continue;
+            LocalTime breakStart = LocalTime.parse(b.startTime(), TIME_FMT);
+            LocalTime breakEnd = LocalTime.parse(b.endTime(), TIME_FMT);
             if (start.isBefore(breakEnd) && end.isAfter(breakStart)) {
-                return b.name() + " (after " + b.afterPeriod() + ") reserved " + breakStart.format(TIME_FMT) + "-" + breakEnd.format(TIME_FMT);
+                return b.name() + " (" + b.startTime() + "-" + b.endTime() + ") conflicts with selected time";
             }
         }
         return null;
@@ -143,8 +161,7 @@ public class PeriodConfigurationController {
     @FXML private void onGenerateFromSettings() {
         try {
             SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
-            List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
-            AppContext.get().periodConfigurationUseCase().recalculate(s, breaks);
+            AppContext.get().periodConfigurationUseCase().recalculateMasterTimeline(s);
             clearForm();
             refreshTable();
             showMessage("Generated " + s.totalPeriods() + " periods from settings", false);

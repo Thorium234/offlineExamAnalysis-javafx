@@ -85,7 +85,7 @@ public final class ApplicationBootstrap {
     }
 
     public PeriodConfigurationUseCase periodConfigurationUseCase() {
-        return new PeriodConfigurationUseCase(periodRepository);
+        return new PeriodConfigurationUseCase(periodRepository, breakRepository);
     }
 
     public BreakConfigurationUseCase breakConfigurationUseCase() {

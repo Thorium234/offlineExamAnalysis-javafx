@@ -65,8 +65,7 @@ public class SettingsController {
     private void recalcPeriods() {
         try {
             var s = AppContext.get().schoolSettingsUseCase().getSettings();
-            var breaks = AppContext.get().breakConfigurationUseCase().findAll();
-            AppContext.get().periodConfigurationUseCase().recalculate(s, breaks);
+            AppContext.get().periodConfigurationUseCase().recalculateMasterTimeline(s);
         } catch (Exception ignored) {}
     }
 

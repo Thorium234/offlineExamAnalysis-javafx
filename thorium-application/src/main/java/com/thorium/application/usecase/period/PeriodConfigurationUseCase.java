@@ -4,7 +4,9 @@ import com.thorium.application.dto.BreakDto;
 import com.thorium.application.dto.PeriodDto;
 import com.thorium.application.dto.SchoolSettingsDto;
 import com.thorium.application.mapper.EntityMapper;
+import com.thorium.application.port.BreakRepository;
 import com.thorium.application.port.PeriodRepository;
+import com.thorium.domain.model.BreakPeriod;
 import com.thorium.domain.model.Period;
 
 import java.time.LocalTime;
@@ -18,9 +20,11 @@ public class PeriodConfigurationUseCase {
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final PeriodRepository periodRepository;
+    private final BreakRepository breakRepository;
 
-    public PeriodConfigurationUseCase(PeriodRepository periodRepository) {
+    public PeriodConfigurationUseCase(PeriodRepository periodRepository, BreakRepository breakRepository) {
         this.periodRepository = periodRepository;
+        this.breakRepository = breakRepository;
     }
 
     public PeriodDto create(PeriodDto dto) {
@@ -47,26 +51,54 @@ public class PeriodConfigurationUseCase {
         return periodRepository.count();
     }
 
-    public void recalculate(SchoolSettingsDto settings, List<BreakDto> breaks) {
+    public void recalculateMasterTimeline(SchoolSettingsDto settings) {
         for (PeriodDto p : findAll()) {
             delete(p.id());
         }
-        List<BreakDto> sorted = breaks.stream()
-                .sorted(Comparator.comparingInt(BreakDto::afterPeriod)
-                        .thenComparingInt(BreakDto::sortOrder))
+
+        List<BreakDto> breaks = breakRepository.findAll().stream()
+                .map(EntityMapper::toDto)
+                .sorted(Comparator.comparingInt(BreakDto::sortOrder))
                 .toList();
-        LocalTime cursor = parseTime(settings.startTime(), "startTime");
-        for (int i = 1; i <= settings.totalPeriods(); i++) {
-            for (BreakDto b : sorted) {
-                if (b.afterPeriod() == i - 1) {
-                    cursor = cursor.plusMinutes(b.durationMinutes());
+
+        int numberOfPeriods = settings.totalPeriods();
+        int periodDuration = settings.periodDurationMinutes();
+        LocalTime schoolStart = parseTime(settings.startTime(), "schoolStartTime");
+        LocalTime clockCursor = schoolStart;
+
+        for (BreakDto b : breaks) {
+            if (b.isBeforePeriodOne()) {
+                LocalTime breakEnd = clockCursor;
+                LocalTime breakStart = clockCursor.minusMinutes(b.durationMinutes());
+                saveBreakTimes(b, breakStart, breakEnd);
+            }
+        }
+
+        for (int p = 1; p <= numberOfPeriods; p++) {
+            LocalTime periodStart = clockCursor;
+            LocalTime periodEnd = clockCursor.plusMinutes(periodDuration);
+            Period period = new Period();
+            period.setPeriodNumber(p);
+            period.setStartTime(periodStart);
+            period.setEndTime(periodEnd);
+            period.setLabel("P" + p);
+            periodRepository.save(period);
+            clockCursor = periodEnd;
+
+            for (BreakDto b : breaks) {
+                if (b.afterPeriod() == p && !b.isBeforePeriodOne()) {
+                    LocalTime breakEnd = clockCursor.plusMinutes(b.durationMinutes());
+                    saveBreakTimes(b, clockCursor, breakEnd);
+                    clockCursor = breakEnd;
                 }
             }
-            LocalTime start = cursor;
-            LocalTime end = start.plusMinutes(settings.periodDurationMinutes());
-            create(new PeriodDto(null, i, start.format(TIME_FORMAT), end.format(TIME_FORMAT), "P" + i));
-            cursor = end;
         }
+    }
+
+    private void saveBreakTimes(BreakDto dto, LocalTime start, LocalTime end) {
+        BreakPeriod bp = new BreakPeriod(dto.id(), dto.name(), dto.afterPeriod(), dto.durationMinutes(),
+                dto.sortOrder(), dto.isBeforePeriodOne(), start, end);
+        breakRepository.save(bp);
     }
 
     private Period toEntity(PeriodDto dto) {

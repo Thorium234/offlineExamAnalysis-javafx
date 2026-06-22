@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 7;
+    private static final int SCHEMA_VERSION = 8;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -60,6 +60,10 @@ public class DatabaseInitializer {
             if (currentVersion < 7) {
                 runMigrationV7(statement);
                 setVersion(statement, 7);
+            }
+            if (currentVersion < 8) {
+                runMigrationV8(statement);
+                setVersion(statement, 8);
             }
 
             connection.commit();
@@ -155,6 +159,14 @@ public class DatabaseInitializer {
         }
     }
 
+    private void runMigrationV8(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE breaks ADD COLUMN is_before_period_one INTEGER NOT NULL DEFAULT 0");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+    }
+
     private void seedDefaults() {
         try (Connection connection = connectionProvider.getConnection();
              Statement statement = connection.createStatement()) {
@@ -162,19 +174,32 @@ public class DatabaseInitializer {
             var settingsCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM school_settings");
             if (settingsCount.next() && settingsCount.getInt(1) == 0) {
-                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, 8, '08:00', '16:00', 40)");
+                statement.execute("INSERT INTO school_settings (id, total_periods, school_start_time, school_end_time, period_duration_min) VALUES (1, 10, '07:10', '16:40', 45)");
+            }
+
+            var breakCount = connection.createStatement()
+                    .executeQuery("SELECT COUNT(*) FROM breaks");
+            if (breakCount.next() && breakCount.getInt(1) == 0) {
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, start_time, end_time) VALUES ('Assembly', 0, 50, 1, 1, '06:20', '07:10')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, start_time, end_time) VALUES ('Tea Break', 3, 20, 2, 0, '09:25', '09:45')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, start_time, end_time) VALUES ('Short Break', 4, 10, 3, 0, '10:30', '10:40')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, start_time, end_time) VALUES ('Lunch Break', 7, 50, 4, 0, '12:50', '13:40')");
+                statement.execute("INSERT INTO breaks (name, after_period, duration_minutes, sort_order, is_before_period_one, start_time, end_time) VALUES ('Games Time', 10, 40, 5, 0, '16:00', '16:40')");
             }
 
             var periodCount = connection.createStatement()
                     .executeQuery("SELECT COUNT(*) FROM periods");
             if (periodCount.next() && periodCount.getInt(1) == 0) {
-                LocalTime start = LocalTime.of(8, 0);
-                for (int i = 1; i <= 8; i++) {
-                    LocalTime end = start.plusMinutes(40);
+                LocalTime clock = LocalTime.of(7, 10);
+                for (int i = 1; i <= 10; i++) {
+                    LocalTime end = clock.plusMinutes(45);
                     statement.execute(String.format(
                             "INSERT INTO periods (period_number, start_time, end_time, label) VALUES (%d, '%s', '%s', 'P%d')",
-                            i, start.format(TIME_FORMAT), end.format(TIME_FORMAT), i));
-                    start = end;
+                            i, clock.format(TIME_FORMAT), end.format(TIME_FORMAT), i));
+                    clock = end;
+                    if (i == 3) clock = clock.plusMinutes(20);
+                    else if (i == 4) clock = clock.plusMinutes(10);
+                    else if (i == 7) clock = clock.plusMinutes(50);
                 }
             }
 

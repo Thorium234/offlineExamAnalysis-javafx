@@ -10,18 +10,20 @@ public class BreakPeriod {
     private int afterPeriod;
     private int durationMinutes;
     private int sortOrder;
+    private boolean isBeforePeriodOne;
     private LocalTime startTime;
     private LocalTime endTime;
 
     public BreakPeriod() {
     }
 
-    public BreakPeriod(Long id, String name, int afterPeriod, int durationMinutes, int sortOrder, LocalTime startTime, LocalTime endTime) {
+    public BreakPeriod(Long id, String name, int afterPeriod, int durationMinutes, int sortOrder, boolean isBeforePeriodOne, LocalTime startTime, LocalTime endTime) {
         this.id = id;
         this.name = name;
         this.afterPeriod = afterPeriod;
         this.durationMinutes = durationMinutes;
         this.sortOrder = sortOrder;
+        this.isBeforePeriodOne = isBeforePeriodOne;
         this.startTime = startTime;
         this.endTime = endTime;
     }
@@ -36,6 +38,8 @@ public class BreakPeriod {
     public void setDurationMinutes(int durationMinutes) { this.durationMinutes = durationMinutes; }
     public int getSortOrder() { return sortOrder; }
     public void setSortOrder(int sortOrder) { this.sortOrder = sortOrder; }
+    public boolean isBeforePeriodOne() { return isBeforePeriodOne; }
+    public void setBeforePeriodOne(boolean beforePeriodOne) { isBeforePeriodOne = beforePeriodOne; }
     public LocalTime getStartTime() { return startTime; }
     public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
     public LocalTime getEndTime() { return endTime; }

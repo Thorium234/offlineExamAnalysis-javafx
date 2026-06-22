@@ -1,7 +1,6 @@
 package com.thorium.ui.controller;
 
 import com.thorium.application.dto.BreakDto;
-import com.thorium.application.dto.PeriodDto;
 import com.thorium.application.dto.SchoolSettingsDto;
 import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
@@ -14,7 +13,6 @@ import javafx.scene.layout.Region;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 public class BreakConfigurationController {
@@ -25,12 +23,14 @@ public class BreakConfigurationController {
     @FXML private TableColumn<BreakDto, String> nameColumn;
     @FXML private TableColumn<BreakDto, Number> afterColumn;
     @FXML private TableColumn<BreakDto, Number> durationColumn;
+    @FXML private TableColumn<BreakDto, String> beforeColumn;
     @FXML private TableColumn<BreakDto, String> startColumn;
     @FXML private TableColumn<BreakDto, String> endColumn;
     @FXML private TextField nameField;
     @FXML private Spinner<Integer> afterSpinner;
     @FXML private Spinner<Integer> durationSpinner;
     @FXML private Spinner<Integer> sortSpinner;
+    @FXML private CheckBox beforeP1Checkbox;
     @FXML private ComboBox<String> startCombo;
     @FXML private ComboBox<String> endCombo;
     @FXML private Label messageLabel;
@@ -50,6 +50,7 @@ public class BreakConfigurationController {
         nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
         afterColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().afterPeriod()));
         durationColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().durationMinutes()));
+        beforeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().isBeforePeriodOne() ? "Yes" : ""));
         startColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().startTime()));
         endColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().endTime()));
         afterSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 12, 0));
@@ -76,6 +77,7 @@ public class BreakConfigurationController {
         try {
             BreakDto dto = new BreakDto(editingId, nameField.getText().trim(),
                     afterSpinner.getValue(), durationSpinner.getValue(), sortSpinner.getValue(),
+                    beforeP1Checkbox.isSelected(),
                     startCombo.getValue(), endCombo.getValue());
             if (editingId == null) AppContext.get().breakConfigurationUseCase().create(dto);
             else AppContext.get().breakConfigurationUseCase().update(dto);
@@ -103,34 +105,19 @@ public class BreakConfigurationController {
             SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
             int tp = s.totalPeriods();
             int dur = s.periodDurationMinutes();
-            LocalTime start = LocalTime.parse(s.startTime(), TIME_FMT);
             for (BreakDto b : AppContext.get().breakConfigurationUseCase().findAll()) {
                 AppContext.get().breakConfigurationUseCase().delete(b.id());
             }
             List<BreakSpec> specs = new ArrayList<>();
-            specs.add(new BreakSpec("Assembly", 0, 50));
-            if (tp >= 4) specs.add(new BreakSpec("Tea Break", 3, 20));
-            if (tp >= 5) specs.add(new BreakSpec("Short Break", 4, 10));
-            if (tp >= 8) specs.add(new BreakSpec("Lunch Break", 7, 50));
-            specs.add(new BreakSpec("Games Time", tp, 40));
-            LocalTime cursor = start;
-            int periodIndex = 0;
+            specs.add(new BreakSpec("Assembly", 0, 50, true));
+            if (tp >= 4) specs.add(new BreakSpec("Tea Break", 3, 20, false));
+            if (tp >= 5) specs.add(new BreakSpec("Short Break", 4, 10, false));
+            if (tp >= 8) specs.add(new BreakSpec("Lunch Break", 7, 50, false));
+            specs.add(new BreakSpec("Games Time", tp, 40, false));
             int sort = 1;
             for (BreakSpec spec : specs) {
-                while (periodIndex < spec.afterPeriod) {
-                    periodIndex++;
-                    cursor = cursor.plusMinutes(dur);
-                    for (BreakDto existing : findAllBreaksSoFar()) {
-                        if (existing.afterPeriod() == periodIndex) {
-                            cursor = cursor.plusMinutes(existing.durationMinutes());
-                        }
-                    }
-                }
-                String bStart = cursor.format(TIME_FMT);
-                String bEnd = cursor.plusMinutes(spec.duration).format(TIME_FMT);
                 AppContext.get().breakConfigurationUseCase().create(
-                        new BreakDto(null, spec.name, spec.afterPeriod, spec.duration, sort++, bStart, bEnd));
-                cursor = LocalTime.parse(bEnd, TIME_FMT);
+                        new BreakDto(null, spec.name, spec.afterPeriod, spec.duration, sort++, spec.beforeP1, null, null));
             }
             clearForm(); refreshTable();
             recalcPeriods();
@@ -140,17 +127,12 @@ public class BreakConfigurationController {
         }
     }
 
-    private record BreakSpec(String name, int afterPeriod, int duration) {}
-
-    private List<BreakDto> findAllBreaksSoFar() {
-        return AppContext.get().breakConfigurationUseCase().findAll();
-    }
+    private record BreakSpec(String name, int afterPeriod, int duration, boolean beforeP1) {}
 
     private void recalcPeriods() {
         try {
             SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
-            List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
-            AppContext.get().periodConfigurationUseCase().recalculate(s, breaks);
+            AppContext.get().periodConfigurationUseCase().recalculateMasterTimeline(s);
         } catch (Exception ignored) {}
     }
 
@@ -165,6 +147,7 @@ public class BreakConfigurationController {
         afterSpinner.getValueFactory().setValue(dto.afterPeriod());
         durationSpinner.getValueFactory().setValue(dto.durationMinutes());
         sortSpinner.getValueFactory().setValue(dto.sortOrder());
+        beforeP1Checkbox.setSelected(dto.isBeforePeriodOne());
         startCombo.setValue(dto.startTime());
         endCombo.setValue(dto.endTime());
     }
@@ -174,6 +157,7 @@ public class BreakConfigurationController {
         afterSpinner.getValueFactory().setValue(0);
         durationSpinner.getValueFactory().setValue(20);
         sortSpinner.getValueFactory().setValue(0);
+        beforeP1Checkbox.setSelected(false);
         startCombo.setValue(null);
         endCombo.setValue(null);
         breakTable.getSelectionModel().clearSelection();
