@@ -10,4 +10,9 @@ public record SubjectDto(
         boolean requiresDoublePeriod,
         String color
 ) {
+    public SubjectDto(Long id, String code, String name, boolean examinable, int cbcDefaultLessons,
+                      boolean allowsDoublePeriod, boolean requiresDoublePeriod) {
+        this(id, code, name, examinable, cbcDefaultLessons, allowsDoublePeriod, requiresDoublePeriod, null);
+    }
 }
+

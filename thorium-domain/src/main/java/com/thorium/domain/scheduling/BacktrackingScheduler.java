@@ -7,8 +7,15 @@ import com.thorium.domain.model.TeachingAssignment;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * Standard DFS backtracking scheduler.
+ * Resolves timetabling conflicts by recursively searching slot assignments, sorting candidates
+ * by soft constraints score, and backtracking on hard constraint violations.
+ */
 public class BacktrackingScheduler {
 
     private static final int MAX_ITERATIONS = 100_000;
@@ -22,41 +29,38 @@ public class BacktrackingScheduler {
     }
 
     public TimetableGenerationResult resolve(SchedulingContext context, PartialSchedule initial) {
-        List<GreedyScheduler.AssignmentWorkItem> workItems = new GreedyScheduler(hardValidator, softScorer)
+        Map<Long, Long> placedCounts = new HashMap<>();
+        for (var lesson : initial.placedLessons()) {
+            placedCounts.merge(lesson.assignment().getId(), 1L, Long::sum);
+        }
+
+        List<GreedyScheduler.AssignmentWorkItem> allItems = new GreedyScheduler(hardValidator, softScorer)
                 .expandAssignments(context);
+        List<GreedyScheduler.AssignmentWorkItem> workItems = new ArrayList<>();
+        for (var item : allItems) {
+            long placed = placedCounts.getOrDefault(item.assignment().getId(), 0L);
+            if (item.lessonIndex() >= placed) {
+                workItems.add(item);
+            }
+        }
         workItems.sort(Comparator.comparingInt(GreedyScheduler.AssignmentWorkItem::difficulty).reversed());
 
         PartialSchedule schedule = initial.copy();
         List<String> warnings = new ArrayList<>();
-        int iterations = 0;
-        int index = schedule.size();
+        int[] iterations = new int[1];
 
-        while (index < workItems.size() && iterations < MAX_ITERATIONS) {
-            iterations++;
-            GreedyScheduler.AssignmentWorkItem item = workItems.get(index);
-            List<ScheduleSlot> candidates = rankedSlots(item.assignment(), schedule, context);
+        boolean success = search(0, workItems, schedule, context, iterations);
 
-            if (candidates.isEmpty()) {
-                if (schedule.isEmpty()) {
-                    return TimetableGenerationResult.failure(List.of(
-                            "Unable to place assignment " + item.assignment().getId()
-                                    + " — no valid slots and nothing to backtrack"));
-                }
-                schedule.removeLast();
-                index--;
-                continue;
-            }
-
-            schedule.place(new PlacedLesson(item.assignment(), candidates.getFirst()));
-            index++;
-        }
-
-        if (index < workItems.size()) {
-            warnings.add("Backtracking stopped after " + MAX_ITERATIONS + " iterations — schedule may be incomplete");
+        if (iterations[0] >= MAX_ITERATIONS) {
+            warnings.add("Backtracking stopped after reaching safety limit of " + MAX_ITERATIONS + " search steps.");
         }
 
         double quality = softScorer.score(schedule, context);
         HardConstraintValidator.ValidationResult validation = hardValidator.validateComplete(schedule, context);
+
+        if (!success) {
+            return TimetableGenerationResult.failure(List.of("Backtracking solver failed to find a valid layout under hard constraints."));
+        }
 
         if (!validation.isValid()) {
             return TimetableGenerationResult.failure(validation.errors());
@@ -65,13 +69,42 @@ public class BacktrackingScheduler {
         TimetableGenerationResult result = TimetableGenerationResult.success(schedule, quality);
         if (!result.isComplete(context)) {
             List<String> countViolations = result.validateLessonCounts(context);
-            return TimetableGenerationResult.partial(schedule, quality,
-                    merge(warnings, countViolations));
+            return TimetableGenerationResult.partial(schedule, quality, merge(warnings, countViolations));
         }
+
         if (!warnings.isEmpty()) {
             return TimetableGenerationResult.partial(schedule, quality, warnings);
         }
+
         return result;
+    }
+
+    private boolean search(int index, List<GreedyScheduler.AssignmentWorkItem> workItems,
+                           PartialSchedule schedule, SchedulingContext context, int[] iterations) {
+        if (index >= workItems.size()) {
+            return true;
+        }
+
+        iterations[0]++;
+        if (iterations[0] >= MAX_ITERATIONS) {
+            return false;
+        }
+
+        GreedyScheduler.AssignmentWorkItem item = workItems.get(index);
+        List<ScheduleSlot> candidates = rankedSlots(item.assignment(), schedule, context);
+
+        for (ScheduleSlot slot : candidates) {
+            PlacedLesson placed = new PlacedLesson(item.assignment(), slot);
+            schedule.place(placed);
+
+            if (search(index + 1, workItems, schedule, context, iterations)) {
+                return true;
+            }
+
+            schedule.removeLast(); // Backtrack
+        }
+
+        return false;
     }
 
     private List<ScheduleSlot> rankedSlots(TeachingAssignment assignment, PartialSchedule schedule,
@@ -96,3 +129,4 @@ public class BacktrackingScheduler {
     private record ScoredSlot(ScheduleSlot slot, double score) {
     }
 }
+

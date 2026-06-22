@@ -25,7 +25,7 @@ public class SoftConstraintScorer {
         }
         double spreadScore = scoreSpread(schedule);
         double workloadScore = scoreTeacherWorkload(schedule, context);
-        double consecutiveScore = scoreConsecutiveLessons(schedule);
+        double consecutiveScore = scoreConsecutiveLessons(schedule, context);
         return spreadScore * SPREAD_WEIGHT + workloadScore * WORKLOAD_WEIGHT + consecutiveScore * CONSECUTIVE_WEIGHT;
     }
 
@@ -88,24 +88,32 @@ public class SoftConstraintScorer {
         return teachers == 0 ? 1.0 : total / teachers;
     }
 
-    private double scoreConsecutiveLessons(PartialSchedule schedule) {
+    private double scoreConsecutiveLessons(PartialSchedule schedule, SchedulingContext context) {
         Map<Long, Map<DayOfWeek, List<Integer>>> assignmentPeriods = new HashMap<>();
+        Map<Long, TeachingAssignment> assignmentMap = new HashMap<>();
         for (PlacedLesson placed : schedule.placedLessons()) {
             assignmentPeriods
                     .computeIfAbsent(placed.assignment().getId(), k -> new EnumMap<>(DayOfWeek.class))
                     .computeIfAbsent(placed.slot().dayOfWeek(), k -> new java.util.ArrayList<>())
                     .add(placed.slot().periodNumber());
+            assignmentMap.putIfAbsent(placed.assignment().getId(), placed.assignment());
         }
 
         int penalties = 0;
         int total = 0;
-        for (Map<DayOfWeek, List<Integer>> dayMap : assignmentPeriods.values()) {
-            for (List<Integer> periods : dayMap.values()) {
+        for (var entry : assignmentPeriods.entrySet()) {
+            boolean requiresDouble = context.subject(entry.getKey().longValue())
+                    .map(s -> s.isRequiresDoublePeriod())
+                    .orElse(false);
+            for (List<Integer> periods : entry.getValue().values()) {
                 periods.sort(Integer::compareTo);
                 for (int i = 1; i < periods.size(); i++) {
                     total++;
-                    if (periods.get(i) - periods.get(i - 1) == 1) {
-                        penalties++;
+                    boolean isConsecutive = periods.get(i) - periods.get(i - 1) == 1;
+                    if (isConsecutive) {
+                        if (!requiresDouble) {
+                            penalties++;
+                        }
                     }
                 }
             }

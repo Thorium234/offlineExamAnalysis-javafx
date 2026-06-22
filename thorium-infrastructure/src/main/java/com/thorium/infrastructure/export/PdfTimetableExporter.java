@@ -2,6 +2,7 @@ package com.thorium.infrastructure.export;
 
 import com.thorium.application.port.ClassStreamRepository;
 import com.thorium.application.port.SubjectRepository;
+import com.thorium.application.port.TeacherRepository;
 import com.thorium.application.port.TeachingAssignmentRepository;
 import com.thorium.application.port.TimetableExporter;
 import com.thorium.application.port.TimetableRepository;
@@ -25,13 +26,16 @@ public class PdfTimetableExporter implements TimetableExporter {
     private final TeachingAssignmentRepository assignmentRepository;
     private final SubjectRepository subjectRepository;
     private final ClassStreamRepository classStreamRepository;
+    private final TeacherRepository teacherRepository;
 
     public PdfTimetableExporter(TeachingAssignmentRepository assignmentRepository,
                                 SubjectRepository subjectRepository,
-                                ClassStreamRepository classStreamRepository) {
+                                ClassStreamRepository classStreamRepository,
+                                TeacherRepository teacherRepository) {
         this.assignmentRepository = assignmentRepository;
         this.subjectRepository = subjectRepository;
         this.classStreamRepository = classStreamRepository;
+        this.teacherRepository = teacherRepository;
     }
 
     @Override
@@ -123,8 +127,9 @@ public class PdfTimetableExporter implements TimetableExporter {
             if (assignment != null) {
                 String subjectName = subjectRepository.findById(assignment.getSubjectId())
                         .map(s -> s.getName()).orElse("?");
-                String teacherName = ""; // could be added if desired
-                label = subjectName;
+                String teacherName = teacherRepository.findById(assignment.getTeacherId())
+                        .map(t -> t.getName()).orElse("?");
+                label = subjectName + " (" + teacherName + ")";
             }
             cells.put(entry.getDayOfWeek().name() + "-" + entry.getPeriodNumber(), label);
         }

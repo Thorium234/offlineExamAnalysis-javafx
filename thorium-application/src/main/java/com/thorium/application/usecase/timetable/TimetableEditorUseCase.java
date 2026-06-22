@@ -136,7 +136,7 @@ public class TimetableEditorUseCase {
         return toCard(saved, ctx.assignment(teachingAssignmentId), ctx, false);
     }
 
-    public LessonCardDto moveEntry(Long timetableId, Long entryId, DayOfWeek day, int period) {
+    public LessonCardDto moveEntry(Long timetableId, Long entryId, DayOfWeek day, int period, Long roomId) {
         TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
                 .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
 
@@ -146,13 +146,14 @@ public class TimetableEditorUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Entry not found: " + entryId));
 
         PlacementValidationDto validation = validatePlacement(
-                timetableId, entry.getTeachingAssignmentId(), day, period, entryId, entry.getRoomId());
+                timetableId, entry.getTeachingAssignmentId(), day, period, entryId, roomId);
         if (!validation.valid()) {
             throw new IllegalStateException(validation.reason());
         }
 
         entry.setDayOfWeek(day);
         entry.setPeriodNumber(period);
+        entry.setRoomId(roomId);
         TimetableEntry saved = timetableRepository.saveEntry(entry);
 
         EditorContext ctx = buildContext(timetableRepository.findByIdWithEntries(timetableId)
@@ -226,6 +227,25 @@ public class TimetableEditorUseCase {
 
         EditorContext ctx = buildContext(data.entries());
         return toCard(saved, ctx.assignment(entry.getTeachingAssignmentId()), ctx, true);
+    }
+
+    public LessonCardDto assignRoom(Long timetableId, Long entryId, Long roomId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+
+        TimetableEntry entry = findEntry(data.entries(), entryId);
+        ScheduleSlot slot = new ScheduleSlot(entry.getDayOfWeek(), entry.getPeriodNumber());
+
+        if (roomId != null && !validator.isRoomAvailable(roomId, slot, data.entries(), entryId)) {
+            throw new IllegalStateException("Room is already booked at this time");
+        }
+
+        entry.setRoomId(roomId);
+        TimetableEntry saved = timetableRepository.saveEntry(entry);
+
+        EditorContext ctx = buildContext(timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow().entries());
+        return toCard(saved, ctx.assignment(entry.getTeachingAssignmentId()), ctx, false);
     }
 
     private TimetableEntry findEntry(List<TimetableEntry> entries, Long entryId) {

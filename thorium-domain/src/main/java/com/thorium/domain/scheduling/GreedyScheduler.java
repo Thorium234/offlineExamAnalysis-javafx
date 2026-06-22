@@ -46,9 +46,19 @@ public class GreedyScheduler {
 
     private int computeDifficulty(TeachingAssignment assignment, SchedulingContext context) {
         int difficulty = assignment.getLessonsPerWeek() * 10;
-        long unavailableCount = context.isTeacherUnavailable(assignment.getTeacherId(), new ScheduleSlot(
-                context.workingDays().getFirst(), 1)) ? 1 : 0;
-        difficulty += (int) unavailableCount * 5;
+        long unavailableCount = 0;
+        long totalSlots = 0;
+        for (var day : context.workingDays()) {
+            for (int p = 1; p <= context.periodsPerDay(); p++) {
+                totalSlots++;
+                if (context.isTeacherUnavailable(assignment.getTeacherId(), new ScheduleSlot(day, p))) {
+                    unavailableCount++;
+                }
+            }
+        }
+        if (totalSlots > 0) {
+            difficulty += (int) ((unavailableCount * 100) / totalSlots);
+        }
         return difficulty;
     }
 
