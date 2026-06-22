@@ -19,11 +19,13 @@ public class ExportCenterController {
     @FXML private ComboBox<TimetableDto> timetableCombo;
     @FXML private Label messageLabel;
     @FXML private Button exportPdfBtn;
+    @FXML private Button previewPdfBtn;
     @FXML private Button exportExcelBtn;
 
     @FXML
     private void initialize() {
         IconUtil.addIcon(exportPdfBtn, IconUtil.EXPORT, "#ffffff");
+        IconUtil.addIcon(previewPdfBtn, IconUtil.PREVIEW, "#2563eb");
         IconUtil.addIcon(exportExcelBtn, IconUtil.EXPORT, "#16a34a");
         refreshTimetables();
         timetableCombo.setCellFactory(lv -> new ListCell<TimetableDto>() {
@@ -37,6 +39,24 @@ public class ExportCenterController {
     @FXML
     private void onExportPdf() {
         export(true);
+    }
+
+    @FXML
+    private void onPreviewPdf() {
+        TimetableDto selected = timetableCombo.getSelectionModel().getSelectedItem();
+        if (selected == null) {
+            showMessage("Select a timetable", true);
+            return;
+        }
+        try {
+            byte[] pdfBytes = AppContext.get().exportTimetableUseCase().previewPdf(selected.id());
+            new PdfPreviewDialog(getStage(), pdfBytes, selected.name(), selected.id()).show();
+            showMessage("Preview closed", false);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            showMessage(e.getMessage(), true);
+        } catch (Exception e) {
+            showMessage("An unexpected error occurred", true);
+        }
     }
 
     @FXML

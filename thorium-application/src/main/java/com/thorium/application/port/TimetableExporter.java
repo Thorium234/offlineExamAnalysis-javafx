@@ -9,4 +9,6 @@ public interface TimetableExporter {
     void exportPdf(TimetableWithEntries data, Path outputPath);
 
     void exportExcel(TimetableWithEntries data, Path outputPath);
+
+    byte[] renderPdfToBytes(TimetableWithEntries data);
 }

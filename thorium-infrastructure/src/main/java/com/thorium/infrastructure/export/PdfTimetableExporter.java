@@ -16,7 +16,9 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -40,9 +42,24 @@ public class PdfTimetableExporter implements TimetableExporter {
 
     @Override
     public void exportPdf(TimetableRepository.TimetableWithEntries data, Path outputPath) {
+        byte[] pdfBytes = renderPdfToBytes(data);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
+
+    @Override
+    public byte[] renderPdfToBytes(TimetableRepository.TimetableWithEntries data) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+        writePdf(data, bos);
+        return bos.toByteArray();
+    }
+
+    private void writePdf(TimetableRepository.TimetableWithEntries data, OutputStream output) {
         try (PDDocument document = new PDDocument()) {
             Map<String, List<TimetableEntry>> byClass = groupByClass(data.entries());
-            PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
             PDType1Font fontBold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
 
             for (Map.Entry<String, List<TimetableEntry>> classEntry : byClass.entrySet()) {
@@ -88,9 +105,9 @@ public class PdfTimetableExporter implements TimetableExporter {
                     }
                 }
             }
-            document.save(outputPath.toFile());
+            document.save(output);
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to export PDF", e);
+            throw new IllegalStateException("Failed to render PDF", e);
         }
     }
 

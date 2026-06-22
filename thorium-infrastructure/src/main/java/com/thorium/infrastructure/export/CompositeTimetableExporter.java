@@ -26,4 +26,9 @@ public class CompositeTimetableExporter implements TimetableExporter {
     public void exportExcel(TimetableRepository.TimetableWithEntries data, Path outputPath) {
         excelExporter.exportExcel(data, outputPath);
     }
+
+    @Override
+    public byte[] renderPdfToBytes(TimetableRepository.TimetableWithEntries data) {
+        return pdfExporter.renderPdfToBytes(data);
+    }
 }

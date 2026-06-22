@@ -20,6 +20,7 @@ public final class IconUtil {
     public static final String SETTINGS = "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z";
     public static final String BLOCK = "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z M4.93 4.93l14.14 14.14";
     public static final String CHECK = "M9 16l-4-4 2-2 2 2 5-5 2 2z";
+    public static final String PREVIEW = "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z";
 
     public static Node createIcon(String svgPath, String color, double size) {
         SVGPath path = new SVGPath();

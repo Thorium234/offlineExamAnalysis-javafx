@@ -26,4 +26,10 @@ public class ExportTimetableUseCase {
                 .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
         exporter.exportExcel(data, outputPath);
     }
+
+    public byte[] previewPdf(Long timetableId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderPdfToBytes(data);
+    }
 }

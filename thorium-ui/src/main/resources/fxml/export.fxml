@@ -14,6 +14,7 @@
     </HBox>
     <HBox spacing="12">
         <Button fx:id="exportPdfBtn" text="Export PDF" onAction="#onExportPdf" styleClass="primary-button"/>
+        <Button fx:id="previewPdfBtn" text="Preview PDF" onAction="#onPreviewPdf"/>
         <Button fx:id="exportExcelBtn" text="Export Excel" onAction="#onExportExcel"/>
     </HBox>
     <Label fx:id="messageLabel" wrapText="true"/>
