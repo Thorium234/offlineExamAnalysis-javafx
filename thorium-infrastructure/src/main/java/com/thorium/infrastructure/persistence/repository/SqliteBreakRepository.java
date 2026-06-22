@@ -5,11 +5,15 @@ import com.thorium.domain.model.BreakPeriod;
 import com.thorium.infrastructure.persistence.SQLiteConnectionProvider;
 
 import java.sql.*;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class SqliteBreakRepository extends AbstractRepository implements BreakRepository {
+
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     public SqliteBreakRepository(SQLiteConnectionProvider connectionProvider) {
         super(connectionProvider);
@@ -31,7 +35,7 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
     }
 
     private void insert(Connection conn, BreakPeriod bp) throws SQLException {
-        String sql = "INSERT INTO breaks (name, after_period, duration_minutes, sort_order) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO breaks (name, after_period, duration_minutes, sort_order, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bind(ps, bp);
             ps.executeUpdate();
@@ -44,10 +48,10 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
     }
 
     private void update(Connection conn, BreakPeriod bp) throws SQLException {
-        String sql = "UPDATE breaks SET name=?, after_period=?, duration_minutes=?, sort_order=? WHERE id=?";
+        String sql = "UPDATE breaks SET name=?, after_period=?, duration_minutes=?, sort_order=?, start_time=?, end_time=? WHERE id=?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, bp);
-            ps.setLong(5, bp.getId());
+            ps.setLong(7, bp.getId());
             ps.executeUpdate();
         }
     }
@@ -57,6 +61,8 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
         ps.setInt(2, bp.getAfterPeriod());
         ps.setInt(3, bp.getDurationMinutes());
         ps.setInt(4, bp.getSortOrder());
+        ps.setString(5, bp.getStartTime() != null ? bp.getStartTime().format(TIME_FMT) : null);
+        ps.setString(6, bp.getEndTime() != null ? bp.getEndTime().format(TIME_FMT) : null);
     }
 
     @Override
@@ -99,12 +105,16 @@ public class SqliteBreakRepository extends AbstractRepository implements BreakRe
     }
 
     private BreakPeriod map(ResultSet rs) throws SQLException {
-        return new BreakPeriod(
-                rs.getLong("id"),
-                rs.getString("name"),
-                rs.getInt("after_period"),
-                rs.getInt("duration_minutes"),
-                rs.getInt("sort_order")
-        );
+        BreakPeriod bp = new BreakPeriod();
+        bp.setId(rs.getLong("id"));
+        bp.setName(rs.getString("name"));
+        bp.setAfterPeriod(rs.getInt("after_period"));
+        bp.setDurationMinutes(rs.getInt("duration_minutes"));
+        bp.setSortOrder(rs.getInt("sort_order"));
+        String st = rs.getString("start_time");
+        if (st != null) bp.setStartTime(LocalTime.parse(st, TIME_FMT));
+        String et = rs.getString("end_time");
+        if (et != null) bp.setEndTime(LocalTime.parse(et, TIME_FMT));
+        return bp;
     }
 }

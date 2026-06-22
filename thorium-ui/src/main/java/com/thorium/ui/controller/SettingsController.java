@@ -53,12 +53,21 @@ public class SettingsController {
                     durationSpinner.getValue()
             );
             AppContext.get().schoolSettingsUseCase().updateSettings(dto);
-            showMessage("Settings saved", false);
+            recalcPeriods();
+            showMessage("Settings saved — periods recalculated", false);
         } catch (IllegalArgumentException e) {
             showMessage(e.getMessage(), true);
         } catch (Exception e) {
             showMessage("Unexpected error saving settings", true);
         }
+    }
+
+    private void recalcPeriods() {
+        try {
+            var s = AppContext.get().schoolSettingsUseCase().getSettings();
+            var breaks = AppContext.get().breakConfigurationUseCase().findAll();
+            AppContext.get().periodConfigurationUseCase().recalculate(s, breaks);
+        } catch (Exception ignored) {}
     }
 
     private void showMessage(String msg, boolean error) {

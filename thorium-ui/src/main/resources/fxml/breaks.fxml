@@ -12,7 +12,9 @@
         <columns>
             <TableColumn fx:id="nameColumn" text="Name" prefWidth="150"/>
             <TableColumn fx:id="afterColumn" text="After Period" prefWidth="100"/>
-            <TableColumn fx:id="durationColumn" text="Duration (min)" prefWidth="120"/>
+            <TableColumn fx:id="durationColumn" text="Duration (min)" prefWidth="100"/>
+            <TableColumn fx:id="startColumn" text="Start" prefWidth="80"/>
+            <TableColumn fx:id="endColumn" text="End" prefWidth="80"/>
         </columns>
     </TableView>
     <GridPane hgap="8" vgap="8">
@@ -22,8 +24,12 @@
         <Spinner fx:id="afterSpinner" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
         <Label text="Duration (min)" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
         <Spinner fx:id="durationSpinner" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-        <Label text="Sort Order" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-        <Spinner fx:id="sortSpinner" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+        <Label text="Start" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+        <ComboBox fx:id="startCombo" GridPane.columnIndex="1" GridPane.rowIndex="3" prefWidth="140"/>
+        <Label text="End" GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+        <ComboBox fx:id="endCombo" GridPane.columnIndex="1" GridPane.rowIndex="4" prefWidth="140"/>
+        <Label text="Sort Order" GridPane.columnIndex="0" GridPane.rowIndex="5"/>
+        <Spinner fx:id="sortSpinner" GridPane.columnIndex="1" GridPane.rowIndex="5"/>
     </GridPane>
     <HBox spacing="8" alignment="CENTER_LEFT">
         <Button fx:id="saveBtn" text="Save" onAction="#onSave"/>

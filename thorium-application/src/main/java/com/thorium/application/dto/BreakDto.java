@@ -5,6 +5,8 @@ public record BreakDto(
         String name,
         int afterPeriod,
         int durationMinutes,
-        int sortOrder
+        int sortOrder,
+        String startTime,
+        String endTime
 ) {
 }

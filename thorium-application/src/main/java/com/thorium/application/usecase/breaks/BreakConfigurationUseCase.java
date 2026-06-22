@@ -5,9 +5,14 @@ import com.thorium.application.mapper.EntityMapper;
 import com.thorium.application.port.BreakRepository;
 import com.thorium.domain.model.BreakPeriod;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 
 public class BreakConfigurationUseCase {
+
+    private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
 
     private final BreakRepository breakRepository;
 
@@ -37,13 +42,19 @@ public class BreakConfigurationUseCase {
     }
 
     private BreakPeriod toEntity(BreakDto dto) {
-        BreakPeriod breakPeriod = new BreakPeriod();
-        breakPeriod.setId(dto.id());
-        breakPeriod.setName(dto.name());
-        breakPeriod.setAfterPeriod(dto.afterPeriod());
-        breakPeriod.setDurationMinutes(dto.durationMinutes());
-        breakPeriod.setSortOrder(dto.sortOrder());
-        return breakPeriod;
+        BreakPeriod bp = new BreakPeriod();
+        bp.setId(dto.id());
+        bp.setName(dto.name());
+        bp.setAfterPeriod(dto.afterPeriod());
+        bp.setDurationMinutes(dto.durationMinutes());
+        bp.setSortOrder(dto.sortOrder());
+        if (dto.startTime() != null && !dto.startTime().isBlank()) {
+            bp.setStartTime(parseTime(dto.startTime()));
+        }
+        if (dto.endTime() != null && !dto.endTime().isBlank()) {
+            bp.setEndTime(parseTime(dto.endTime()));
+        }
+        return bp;
     }
 
     private void validate(BreakDto dto) {
@@ -52,6 +63,14 @@ public class BreakConfigurationUseCase {
         }
         if (dto.durationMinutes() <= 0) {
             throw new IllegalArgumentException("Duration must be positive");
+        }
+    }
+
+    private LocalTime parseTime(String time) {
+        try {
+            return LocalTime.parse(time, TIME_FORMAT);
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException("Time must be in HH:mm format (e.g., 08:30), got: " + time);
         }
     }
 }

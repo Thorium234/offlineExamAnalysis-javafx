@@ -143,26 +143,8 @@ public class PeriodConfigurationController {
     @FXML private void onGenerateFromSettings() {
         try {
             SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
-            List<PeriodDto> existing = AppContext.get().periodConfigurationUseCase().findAll();
-            for (PeriodDto p : existing) {
-                AppContext.get().periodConfigurationUseCase().delete(p.id());
-            }
-            for (int i = 1; i <= s.totalPeriods(); i++) {
-                LocalTime cursor = LocalTime.parse(s.startTime(), TIME_FMT);
-                List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
-                for (int j = 1; j < i; j++) {
-                    cursor = cursor.plusMinutes(s.periodDurationMinutes());
-                    for (BreakDto b : breaks) {
-                        if (b.afterPeriod() == j) {
-                            cursor = cursor.plusMinutes(b.durationMinutes());
-                        }
-                    }
-                }
-                String start = cursor.format(TIME_FMT);
-                String end = cursor.plusMinutes(s.periodDurationMinutes()).format(TIME_FMT);
-                AppContext.get().periodConfigurationUseCase().create(
-                        new PeriodDto(null, i, start, end, "P" + i));
-            }
+            List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
+            AppContext.get().periodConfigurationUseCase().recalculate(s, breaks);
             clearForm();
             refreshTable();
             showMessage("Generated " + s.totalPeriods() + " periods from settings", false);

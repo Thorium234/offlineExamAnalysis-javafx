@@ -1,6 +1,7 @@
 package com.thorium.ui.controller;
 
 import com.thorium.application.dto.BreakDto;
+import com.thorium.application.dto.PeriodDto;
 import com.thorium.application.dto.SchoolSettingsDto;
 import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
@@ -10,16 +11,28 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.layout.Region;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+
 public class BreakConfigurationController {
+
+    private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
 
     @FXML private TableView<BreakDto> breakTable;
     @FXML private TableColumn<BreakDto, String> nameColumn;
     @FXML private TableColumn<BreakDto, Number> afterColumn;
     @FXML private TableColumn<BreakDto, Number> durationColumn;
+    @FXML private TableColumn<BreakDto, String> startColumn;
+    @FXML private TableColumn<BreakDto, String> endColumn;
     @FXML private TextField nameField;
     @FXML private Spinner<Integer> afterSpinner;
     @FXML private Spinner<Integer> durationSpinner;
     @FXML private Spinner<Integer> sortSpinner;
+    @FXML private ComboBox<String> startCombo;
+    @FXML private ComboBox<String> endCombo;
     @FXML private Label messageLabel;
     @FXML private Button saveBtn;
     @FXML private Button deleteBtn;
@@ -37,22 +50,37 @@ public class BreakConfigurationController {
         nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
         afterColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().afterPeriod()));
         durationColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().durationMinutes()));
+        startColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().startTime()));
+        endColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().endTime()));
         afterSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 12, 0));
         durationSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 120, 20));
         sortSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 20, 0));
+        populateTimeOptions();
         refreshTable();
         breakTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
         });
     }
 
+    private void populateTimeOptions() {
+        for (int hour = 6; hour <= 20; hour++) {
+            for (int min = 0; min < 60; min += 5) {
+                String t = String.format("%02d:%02d", hour, min);
+                startCombo.getItems().add(t);
+                endCombo.getItems().add(t);
+            }
+        }
+    }
+
     @FXML private void onSave() {
         try {
             BreakDto dto = new BreakDto(editingId, nameField.getText().trim(),
-                    afterSpinner.getValue(), durationSpinner.getValue(), sortSpinner.getValue());
+                    afterSpinner.getValue(), durationSpinner.getValue(), sortSpinner.getValue(),
+                    startCombo.getValue(), endCombo.getValue());
             if (editingId == null) AppContext.get().breakConfigurationUseCase().create(dto);
             else AppContext.get().breakConfigurationUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);
+            recalcPeriods();
         } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
         catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
@@ -63,6 +91,7 @@ public class BreakConfigurationController {
         try {
             AppContext.get().breakConfigurationUseCase().delete(selected.id());
             clearForm(); refreshTable(); showMessage("Deleted", false);
+            recalcPeriods();
         } catch (IllegalArgumentException | IllegalStateException e) { showMessage(e.getMessage(), true); }
         catch (Exception e) { showMessage("An unexpected error occurred", true); }
     }
@@ -73,36 +102,61 @@ public class BreakConfigurationController {
         try {
             SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
             int tp = s.totalPeriods();
+            int dur = s.periodDurationMinutes();
+            LocalTime start = LocalTime.parse(s.startTime(), TIME_FMT);
             for (BreakDto b : AppContext.get().breakConfigurationUseCase().findAll()) {
                 AppContext.get().breakConfigurationUseCase().delete(b.id());
             }
+            List<BreakSpec> specs = new ArrayList<>();
+            specs.add(new BreakSpec("Assembly", 0, 50));
+            if (tp >= 4) specs.add(new BreakSpec("Tea Break", 3, 20));
+            if (tp >= 5) specs.add(new BreakSpec("Short Break", 4, 10));
+            if (tp >= 8) specs.add(new BreakSpec("Lunch Break", 7, 50));
+            specs.add(new BreakSpec("Games Time", tp, 40));
+            LocalTime cursor = start;
+            int periodIndex = 0;
             int sort = 1;
-            AppContext.get().breakConfigurationUseCase().create(
-                    new BreakDto(null, "Assembly", 1, 20, sort++));
-            if (tp >= 3) {
+            for (BreakSpec spec : specs) {
+                while (periodIndex < spec.afterPeriod) {
+                    periodIndex++;
+                    cursor = cursor.plusMinutes(dur);
+                    for (BreakDto existing : findAllBreaksSoFar()) {
+                        if (existing.afterPeriod() == periodIndex) {
+                            cursor = cursor.plusMinutes(existing.durationMinutes());
+                        }
+                    }
+                }
+                String bStart = cursor.format(TIME_FMT);
+                String bEnd = cursor.plusMinutes(spec.duration).format(TIME_FMT);
                 AppContext.get().breakConfigurationUseCase().create(
-                        new BreakDto(null, "Morning Break", 2, 15, sort++));
+                        new BreakDto(null, spec.name, spec.afterPeriod, spec.duration, sort++, bStart, bEnd));
+                cursor = LocalTime.parse(bEnd, TIME_FMT);
             }
-            if (tp >= 5) {
-                AppContext.get().breakConfigurationUseCase().create(
-                        new BreakDto(null, "Lunch Break", 4, 40, sort++));
-            }
-            if (tp >= 7) {
-                AppContext.get().breakConfigurationUseCase().create(
-                        new BreakDto(null, "Afternoon Break", tp - 2, 15, sort++));
-            }
-            AppContext.get().breakConfigurationUseCase().create(
-                    new BreakDto(null, "Games Time", tp, 40, sort++));
-            clearForm();
-            refreshTable();
+            clearForm(); refreshTable();
+            recalcPeriods();
             showMessage("Generated default breaks for " + tp + " periods", false);
         } catch (Exception e) {
             showMessage("Failed to generate breaks: " + e.getMessage(), true);
         }
     }
 
+    private record BreakSpec(String name, int afterPeriod, int duration) {}
+
+    private List<BreakDto> findAllBreaksSoFar() {
+        return AppContext.get().breakConfigurationUseCase().findAll();
+    }
+
+    private void recalcPeriods() {
+        try {
+            SchoolSettingsDto s = AppContext.get().schoolSettingsUseCase().getSettings();
+            List<BreakDto> breaks = AppContext.get().breakConfigurationUseCase().findAll();
+            AppContext.get().periodConfigurationUseCase().recalculate(s, breaks);
+        } catch (Exception ignored) {}
+    }
+
     private void refreshTable() {
-        breakTable.setItems(FXCollections.observableArrayList(AppContext.get().breakConfigurationUseCase().findAll()));
+        breakTable.setItems(FXCollections.observableArrayList(
+                AppContext.get().breakConfigurationUseCase().findAll()));
     }
 
     private void populateForm(BreakDto dto) {
@@ -111,6 +165,8 @@ public class BreakConfigurationController {
         afterSpinner.getValueFactory().setValue(dto.afterPeriod());
         durationSpinner.getValueFactory().setValue(dto.durationMinutes());
         sortSpinner.getValueFactory().setValue(dto.sortOrder());
+        startCombo.setValue(dto.startTime());
+        endCombo.setValue(dto.endTime());
     }
 
     private void clearForm() {
@@ -118,6 +174,8 @@ public class BreakConfigurationController {
         afterSpinner.getValueFactory().setValue(0);
         durationSpinner.getValueFactory().setValue(20);
         sortSpinner.getValueFactory().setValue(0);
+        startCombo.setValue(null);
+        endCombo.setValue(null);
         breakTable.getSelectionModel().clearSelection();
     }
 

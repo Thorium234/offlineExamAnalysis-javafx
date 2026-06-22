@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 6;
+    private static final int SCHEMA_VERSION = 7;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -56,6 +56,10 @@ public class DatabaseInitializer {
             if (currentVersion < 6) {
                 runMigrationV6(statement);
                 setVersion(statement, 6);
+            }
+            if (currentVersion < 7) {
+                runMigrationV7(statement);
+                setVersion(statement, 7);
             }
 
             connection.commit();
@@ -134,9 +138,20 @@ public class DatabaseInitializer {
         try {
             statement.execute("ALTER TABLE school_settings ADD COLUMN school_end_time TEXT NOT NULL DEFAULT '16:00'");
         } catch (SQLException e) {
-            if (!e.getMessage().contains("duplicate column")) {
-                throw e;
-            }
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+    }
+
+    private void runMigrationV7(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE breaks ADD COLUMN start_time TEXT");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+        try {
+            statement.execute("ALTER TABLE breaks ADD COLUMN end_time TEXT");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
         }
     }
 

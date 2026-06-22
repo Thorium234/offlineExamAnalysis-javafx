@@ -1,6 +1,8 @@
 package com.thorium.application.usecase.period;
 
+import com.thorium.application.dto.BreakDto;
 import com.thorium.application.dto.PeriodDto;
+import com.thorium.application.dto.SchoolSettingsDto;
 import com.thorium.application.mapper.EntityMapper;
 import com.thorium.application.port.PeriodRepository;
 import com.thorium.domain.model.Period;
@@ -8,6 +10,7 @@ import com.thorium.domain.model.Period;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 import java.util.List;
 
 public class PeriodConfigurationUseCase {
@@ -42,6 +45,28 @@ public class PeriodConfigurationUseCase {
 
     public int periodsPerDay() {
         return periodRepository.count();
+    }
+
+    public void recalculate(SchoolSettingsDto settings, List<BreakDto> breaks) {
+        for (PeriodDto p : findAll()) {
+            delete(p.id());
+        }
+        List<BreakDto> sorted = breaks.stream()
+                .sorted(Comparator.comparingInt(BreakDto::afterPeriod)
+                        .thenComparingInt(BreakDto::sortOrder))
+                .toList();
+        LocalTime cursor = parseTime(settings.startTime(), "startTime");
+        for (int i = 1; i <= settings.totalPeriods(); i++) {
+            for (BreakDto b : sorted) {
+                if (b.afterPeriod() == i - 1) {
+                    cursor = cursor.plusMinutes(b.durationMinutes());
+                }
+            }
+            LocalTime start = cursor;
+            LocalTime end = start.plusMinutes(settings.periodDurationMinutes());
+            create(new PeriodDto(null, i, start.format(TIME_FORMAT), end.format(TIME_FORMAT), "P" + i));
+            cursor = end;
+        }
     }
 
     private Period toEntity(PeriodDto dto) {
