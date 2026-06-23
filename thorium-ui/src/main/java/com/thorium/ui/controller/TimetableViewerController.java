@@ -32,6 +32,7 @@ public class TimetableViewerController {
     @FXML private Label conflictWarningLabel;
     @FXML private VBox poolContainer;
     @FXML private Button refreshBtn;
+    @FXML private Button printBtn;
 
     // SVG Outline Paths for Resource Tree Nodes
     private static final String CLASS_ICON = "M22 10v6M2 10l10-5 10 5-10 5z M6 12v5c0 2 2 3 6 3s6-1 6-3v-5";
@@ -136,6 +137,19 @@ public class TimetableViewerController {
     @FXML
     private void onRefresh() {
         refreshTimetablesList();
+    }
+
+    @FXML
+    private void onPrint() {
+        javafx.scene.Node node = timetableGrid;
+        if (node.getScene() == null) return;
+        javafx.print.PrinterJob job = javafx.print.PrinterJob.createPrinterJob();
+        if (job != null && job.showPrintDialog(node.getScene().getWindow())) {
+            boolean printed = job.printPage(node);
+            if (printed) {
+                job.endJob();
+            }
+        }
     }
 
     /**

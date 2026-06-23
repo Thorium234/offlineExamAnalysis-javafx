@@ -8,6 +8,7 @@
       fx:controller="com.thorium.ui.controller.TeacherManagementController" spacing="12">
     <padding><Insets top="20" right="20" bottom="20" left="20"/></padding>
     <Label text="Teacher Management" styleClass="page-title"/>
+    <TextField fx:id="searchField" promptText="Search teachers by name or code..."/>
     <TableView fx:id="teacherTable" VBox.vgrow="ALWAYS">
         <columns>
             <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>

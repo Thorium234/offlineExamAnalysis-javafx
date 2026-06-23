@@ -17,14 +17,20 @@ public class DashboardController {
     @FXML private Label subjectsCount;
     @FXML private Label classesCount;
     @FXML private Label assignmentsCount;
+    @FXML private Label totalLessonsCount;
+    @FXML private Label roomsCount;
     @FXML private Label timetablesCount;
     @FXML private Label latestTimetable;
+    @FXML private Label workloadCount;
     @FXML private StackPane teachersIcon;
     @FXML private StackPane subjectsIcon;
     @FXML private StackPane classesIcon;
     @FXML private StackPane assignmentsIcon;
+    @FXML private StackPane totalLessonsIcon;
+    @FXML private StackPane roomsIcon;
     @FXML private StackPane timetablesIcon;
     @FXML private StackPane latestIcon;
+    @FXML private StackPane workloadIcon;
     @FXML private Button refreshBtn;
 
     private static final String ICON_TEACHERS = "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z";
@@ -41,8 +47,11 @@ public class DashboardController {
         setIcon(subjectsIcon, ICON_SUBJECTS, "#f59e0b");
         setIcon(classesIcon, ICON_CLASSES, "#8b5cf6");
         setIcon(assignmentsIcon, ICON_ASSIGNMENTS, "#06b6d4");
+        setIcon(totalLessonsIcon, ICON_TIMETABLES, "#6366f1");
+        setIcon(roomsIcon, ICON_CLASSES, "#ef4444");
         setIcon(timetablesIcon, ICON_TIMETABLES, "#3b82f6");
         setIcon(latestIcon, ICON_LATEST, "#f97316");
+        setIcon(workloadIcon, ICON_TEACHERS, "#e11d48");
         refresh();
     }
 
@@ -57,8 +66,11 @@ public class DashboardController {
         subjectsCount.setText(String.valueOf(summary.subjectCount()));
         classesCount.setText(String.valueOf(summary.classStreamCount()));
         assignmentsCount.setText(String.valueOf(summary.assignmentCount()));
+        totalLessonsCount.setText(String.valueOf(summary.totalLessonsPerWeek()));
+        roomsCount.setText(String.valueOf(summary.roomCount()));
         timetablesCount.setText(String.valueOf(summary.timetableCount()));
         latestTimetable.setText(summary.latestTimetableName());
+        workloadCount.setText(summary.teachersOverloaded() + " / " + summary.teachersNearCapacity() + " near");
     }
 
     private void setIcon(StackPane container, String svgPath, String color) {

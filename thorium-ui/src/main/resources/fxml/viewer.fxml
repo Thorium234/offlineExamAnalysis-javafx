@@ -17,6 +17,7 @@
                 <Label text="Timetable:" style="-fx-font-weight: 600; -fx-text-fill: #475569;"/>
                 <ComboBox fx:id="timetableCombo" prefWidth="250" style="-fx-background-radius: 6;"/>
                 <Button fx:id="refreshBtn" text="Refresh Workspace" onAction="#onRefresh" styleClass="primary-button" style="-fx-background-radius: 6; -fx-padding: 6 12 6 12; -fx-font-weight: bold; -fx-cursor: hand;"/>
+                <Button fx:id="printBtn" text="Print" onAction="#onPrint" style="-fx-background-color: #f8fafc; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-background-radius: 6; -fx-padding: 6 12 6 12; -fx-font-weight: bold; -fx-cursor: hand;"/>
             </HBox>
         </HBox>
     </top>

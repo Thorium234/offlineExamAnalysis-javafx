@@ -5,6 +5,7 @@ import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
@@ -12,6 +13,8 @@ public class TeacherManagementController {
 
     @FXML
     private TableView<TeacherDto> teacherTable;
+    @FXML
+    private TextField searchField;
     @FXML
     private TableColumn<TeacherDto, String> codeColumn;
     @FXML
@@ -37,6 +40,8 @@ public class TeacherManagementController {
     @FXML private Button clearBtn;
 
     private Long editingId;
+    private final javafx.collections.ObservableList<TeacherDto> masterData = FXCollections.observableArrayList();
+    private FilteredList<TeacherDto> filteredItems;
 
     @FXML
     private void initialize() {
@@ -50,10 +55,19 @@ public class TeacherManagementController {
         maxDaySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 6));
         maxWeekSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 30));
         activeCheck.setSelected(true);
+        filteredItems = new FilteredList<>(masterData, p -> true);
+        teacherTable.setItems(filteredItems);
         refreshTable();
         teacherTable.getSelectionModel().selectedItemProperty().addListener((obs, o, selected) -> {
             if (selected != null) {
                 populateForm(selected);
+            }
+        });
+        searchField.textProperty().addListener((obs, old, search) -> {
+            if (filteredItems != null) {
+                filteredItems.setPredicate(dto -> search == null || search.isBlank()
+                        || dto.name().toLowerCase().contains(search.toLowerCase())
+                        || dto.code().toLowerCase().contains(search.toLowerCase()));
             }
         });
     }
@@ -110,8 +124,7 @@ public class TeacherManagementController {
     }
 
     private void refreshTable() {
-        teacherTable.setItems(FXCollections.observableArrayList(
-                AppContext.get().teacherManagementUseCase().findAll()));
+        masterData.setAll(AppContext.get().teacherManagementUseCase().findAll());
     }
 
     private void populateForm(TeacherDto dto) {

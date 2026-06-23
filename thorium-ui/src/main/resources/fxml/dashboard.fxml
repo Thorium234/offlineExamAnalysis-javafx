@@ -39,14 +39,29 @@
             <Label fx:id="assignmentsCount" text="0" styleClass="stat-value"/>
         </VBox>
         <VBox styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="1">
+            <StackPane fx:id="totalLessonsIcon" prefWidth="32" prefHeight="32"/>
+            <Label text="Total Lessons/Week" styleClass="stat-label"/>
+            <Label fx:id="totalLessonsCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
+            <StackPane fx:id="roomsIcon" prefWidth="32" prefHeight="32"/>
+            <Label text="Rooms" styleClass="stat-label"/>
+            <Label fx:id="roomsCount" text="0" styleClass="stat-value"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="0" GridPane.rowIndex="2">
             <StackPane fx:id="timetablesIcon" prefWidth="32" prefHeight="32"/>
             <Label text="Timetables" styleClass="stat-label"/>
             <Label fx:id="timetablesCount" text="0" styleClass="stat-value"/>
         </VBox>
-        <VBox styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="1">
+        <VBox styleClass="stat-card" GridPane.columnIndex="1" GridPane.rowIndex="2">
             <StackPane fx:id="latestIcon" prefWidth="32" prefHeight="32"/>
             <Label text="Latest Timetable" styleClass="stat-label"/>
             <Label fx:id="latestTimetable" text="None" styleClass="stat-value-small"/>
+        </VBox>
+        <VBox styleClass="stat-card" GridPane.columnIndex="2" GridPane.rowIndex="2">
+            <StackPane fx:id="workloadIcon" prefWidth="32" prefHeight="32"/>
+            <Label text="Teachers >90% Load" styleClass="stat-label"/>
+            <Label fx:id="workloadCount" text="0" styleClass="stat-value"/>
         </VBox>
     </GridPane>
 </VBox>

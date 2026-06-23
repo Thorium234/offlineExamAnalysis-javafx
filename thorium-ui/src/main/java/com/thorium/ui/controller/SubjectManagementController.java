@@ -5,6 +5,7 @@ import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.paint.Color;
@@ -12,6 +13,7 @@ import javafx.scene.paint.Color;
 public class SubjectManagementController {
 
     @FXML private TableView<SubjectDto> subjectTable;
+    @FXML private TextField searchField;
     @FXML private TableColumn<SubjectDto, String> codeColumn;
     @FXML private TableColumn<SubjectDto, String> nameColumn;
     @FXML private TableColumn<SubjectDto, Boolean> examinableColumn;
@@ -28,6 +30,8 @@ public class SubjectManagementController {
     @FXML private Button clearBtn;
 
     private Long editingId;
+    private final javafx.collections.ObservableList<SubjectDto> masterData = FXCollections.observableArrayList();
+    private FilteredList<SubjectDto> filteredItems;
 
     @FXML
     private void initialize() {
@@ -38,9 +42,16 @@ public class SubjectManagementController {
         nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
         examinableColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().examinable()));
         cbcLessonsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10, 5));
+        filteredItems = new FilteredList<>(masterData, p -> true);
+        subjectTable.setItems(filteredItems);
         refreshTable();
         subjectTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
+        });
+        searchField.textProperty().addListener((obs, old, search) -> {
+            filteredItems.setPredicate(dto -> search == null || search.isBlank()
+                    || dto.name().toLowerCase().contains(search.toLowerCase())
+                    || dto.code().toLowerCase().contains(search.toLowerCase()));
         });
     }
 
@@ -72,7 +83,7 @@ public class SubjectManagementController {
     @FXML private void onClear() { clearForm(); }
 
     private void refreshTable() {
-        subjectTable.setItems(FXCollections.observableArrayList(AppContext.get().subjectManagementUseCase().findAll()));
+        masterData.setAll(AppContext.get().subjectManagementUseCase().findAll());
     }
 
     private void populateForm(SubjectDto dto) {

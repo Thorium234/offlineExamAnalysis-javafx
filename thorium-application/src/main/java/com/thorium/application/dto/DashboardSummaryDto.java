@@ -5,7 +5,12 @@ public record DashboardSummaryDto(
         long subjectCount,
         long classStreamCount,
         long assignmentCount,
+        long totalLessonsPerWeek,
         long timetableCount,
-        String latestTimetableName
+        long roomCount,
+        String latestTimetableName,
+        long teachersOverloaded,
+        long teachersNearCapacity,
+        long teachersAvailable
 ) {
 }

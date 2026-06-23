@@ -5,12 +5,14 @@ import com.thorium.ui.di.AppContext;
 import com.thorium.ui.util.IconUtil;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.collections.FXCollections;
+import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 
 public class ClassManagementController {
 
     @FXML private TableView<ClassStreamDto> classTable;
+    @FXML private TextField searchField;
     @FXML private TableColumn<ClassStreamDto, String> codeColumn;
     @FXML private TableColumn<ClassStreamDto, Number> formColumn;
     @FXML private TableColumn<ClassStreamDto, String> streamColumn;
@@ -25,6 +27,8 @@ public class ClassManagementController {
     @FXML private Button clearBtn;
 
     private Long editingId;
+    private final javafx.collections.ObservableList<ClassStreamDto> masterData = FXCollections.observableArrayList();
+    private FilteredList<ClassStreamDto> filteredItems;
 
     @FXML
     private void initialize() {
@@ -36,9 +40,17 @@ public class ClassManagementController {
         streamColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().stream()));
         displayColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().displayName()));
         formSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4, 1));
+        filteredItems = new FilteredList<>(masterData, p -> true);
+        classTable.setItems(filteredItems);
         refreshTable();
         classTable.getSelectionModel().selectedItemProperty().addListener((obs, o, s) -> {
             if (s != null) populateForm(s);
+        });
+        searchField.textProperty().addListener((obs, old, search) -> {
+            filteredItems.setPredicate(dto -> search == null || search.isBlank()
+                    || dto.displayName().toLowerCase().contains(search.toLowerCase())
+                    || dto.code().toLowerCase().contains(search.toLowerCase())
+                    || dto.stream().toLowerCase().contains(search.toLowerCase()));
         });
     }
 
@@ -66,7 +78,7 @@ public class ClassManagementController {
     @FXML private void onClear() { clearForm(); }
 
     private void refreshTable() {
-        classTable.setItems(FXCollections.observableArrayList(AppContext.get().classStreamManagementUseCase().findAll()));
+        masterData.setAll(AppContext.get().classStreamManagementUseCase().findAll());
     }
 
     private void populateForm(ClassStreamDto dto) {

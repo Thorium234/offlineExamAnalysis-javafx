@@ -121,7 +121,7 @@ public final class ApplicationBootstrap {
     public DashboardUseCase dashboardUseCase() {
         return new DashboardUseCase(
                 teacherRepository, subjectRepository, classStreamRepository,
-                assignmentRepository, timetableRepository);
+                assignmentRepository, timetableRepository, roomRepository);
     }
 
     public PeriodRepository periodRepository() {
