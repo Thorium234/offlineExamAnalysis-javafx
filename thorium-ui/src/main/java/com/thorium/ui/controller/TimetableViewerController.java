@@ -80,6 +80,7 @@ public class TimetableViewerController {
     @FXML
     private void initialize() {
         IconUtil.addIcon(refreshBtn, IconUtil.REFRESH, "#ffffff");
+        IconUtil.addIcon(printBtn, IconUtil.PRINT, "#334155");
 
         // Setup Timetable list listener
         timetableCombo.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {

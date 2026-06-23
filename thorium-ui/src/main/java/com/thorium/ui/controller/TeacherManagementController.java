@@ -65,9 +65,12 @@ public class TeacherManagementController {
         });
         searchField.textProperty().addListener((obs, old, search) -> {
             if (filteredItems != null) {
-                filteredItems.setPredicate(dto -> search == null || search.isBlank()
-                        || dto.name().toLowerCase().contains(search.toLowerCase())
-                        || dto.code().toLowerCase().contains(search.toLowerCase()));
+                filteredItems.setPredicate(dto -> {
+                    if (search == null || search.isBlank()) return true;
+                    String q = search.toLowerCase();
+                    return (dto.name() != null && dto.name().toLowerCase().contains(q))
+                        || (dto.code() != null && dto.code().toLowerCase().contains(q));
+                });
             }
         });
     }

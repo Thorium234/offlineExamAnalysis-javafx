@@ -47,10 +47,13 @@ public class ClassManagementController {
             if (s != null) populateForm(s);
         });
         searchField.textProperty().addListener((obs, old, search) -> {
-            filteredItems.setPredicate(dto -> search == null || search.isBlank()
-                    || dto.displayName().toLowerCase().contains(search.toLowerCase())
-                    || dto.code().toLowerCase().contains(search.toLowerCase())
-                    || dto.stream().toLowerCase().contains(search.toLowerCase()));
+            filteredItems.setPredicate(dto -> {
+                if (search == null || search.isBlank()) return true;
+                String q = search.toLowerCase();
+                return (dto.displayName() != null && dto.displayName().toLowerCase().contains(q))
+                    || (dto.code() != null && dto.code().toLowerCase().contains(q))
+                    || (dto.stream() != null && dto.stream().toLowerCase().contains(q));
+            });
         });
     }
 
