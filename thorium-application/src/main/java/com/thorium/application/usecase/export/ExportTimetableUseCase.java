@@ -3,6 +3,7 @@ package com.thorium.application.usecase.export;
 import com.thorium.application.port.TimetableExporter;
 import com.thorium.application.port.TimetableRepository;
 
+import java.io.IOException;
 import java.nio.file.Path;
 
 public class ExportTimetableUseCase {
@@ -31,5 +32,56 @@ public class ExportTimetableUseCase {
         TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
                 .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
         return exporter.renderPdfToBytes(data);
+    }
+
+    public byte[] previewTeacherPdf(Long timetableId, Long teacherId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderTeacherPdfToBytes(data, teacherId);
+    }
+
+    public byte[] previewStreamPdf(Long timetableId, String stream) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderStreamPdfToBytes(data, stream);
+    }
+
+    public byte[] previewGradePdf(Long timetableId, int form) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        return exporter.renderGradePdfToBytes(data, form);
+    }
+
+    public void exportTeacherPdf(Long timetableId, Path outputPath, Long teacherId) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderTeacherPdfToBytes(data, teacherId);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
+
+    public void exportStreamPdf(Long timetableId, Path outputPath, String stream) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderStreamPdfToBytes(data, stream);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
+    }
+
+    public void exportGradePdf(Long timetableId, Path outputPath, int form) {
+        TimetableRepository.TimetableWithEntries data = timetableRepository.findByIdWithEntries(timetableId)
+                .orElseThrow(() -> new IllegalArgumentException("Timetable not found: " + timetableId));
+        byte[] pdfBytes = exporter.renderGradePdfToBytes(data, form);
+        try {
+            java.nio.file.Files.write(outputPath, pdfBytes);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to write PDF file", e);
+        }
     }
 }

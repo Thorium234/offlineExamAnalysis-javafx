@@ -40,6 +40,21 @@ public class ExcelTimetableExporter implements TimetableExporter {
     }
 
     @Override
+    public byte[] renderTeacherPdfToBytes(TimetableRepository.TimetableWithEntries data, Long teacherId) {
+        throw new UnsupportedOperationException("Use PdfTimetableExporter");
+    }
+
+    @Override
+    public byte[] renderStreamPdfToBytes(TimetableRepository.TimetableWithEntries data, String stream) {
+        throw new UnsupportedOperationException("Use PdfTimetableExporter");
+    }
+
+    @Override
+    public byte[] renderGradePdfToBytes(TimetableRepository.TimetableWithEntries data, int form) {
+        throw new UnsupportedOperationException("Use PdfTimetableExporter");
+    }
+
+    @Override
     public void exportExcel(TimetableRepository.TimetableWithEntries data, Path outputPath) {
         try (Workbook workbook = new XSSFWorkbook()) {
             Map<Long, List<TimetableEntry>> byClass = new TreeMap<>();

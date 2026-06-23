@@ -11,4 +11,10 @@ public interface TimetableExporter {
     void exportExcel(TimetableWithEntries data, Path outputPath);
 
     byte[] renderPdfToBytes(TimetableWithEntries data);
+
+    byte[] renderTeacherPdfToBytes(TimetableWithEntries data, Long teacherId);
+
+    byte[] renderStreamPdfToBytes(TimetableWithEntries data, String stream);
+
+    byte[] renderGradePdfToBytes(TimetableWithEntries data, int form);
 }

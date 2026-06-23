@@ -2,13 +2,8 @@ package com.thorium.infrastructure.export;
 
 import com.thorium.application.port.*;
 import com.thorium.application.util.NameFormatter;
-import com.thorium.domain.model.BreakPeriod;
-import com.thorium.domain.model.Period;
-import com.thorium.domain.model.TeachingAssignment;
-import com.thorium.domain.model.TimetableEntry;
+import com.thorium.domain.model.*;
 import com.thorium.domain.model.timeblock.BlockType;
-import com.thorium.domain.model.timeblock.BreakBlock;
-import com.thorium.domain.model.timeblock.EventBlock;
 import com.thorium.domain.model.timeblock.LessonBlock;
 import com.thorium.domain.model.timeblock.TimeBlock;
 import com.thorium.domain.scheduling.DailyTimelineGenerator;
@@ -74,6 +69,51 @@ public class PdfTimetableExporter implements TimetableExporter {
     @Override
     public void exportExcel(TimetableRepository.TimetableWithEntries data, Path outputPath) {
         throw new UnsupportedOperationException("Use ExcelTimetableExporter");
+    }
+
+    @Override
+    public byte[] renderTeacherPdfToBytes(TimetableRepository.TimetableWithEntries data, Long teacherId) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+        writeTeacherPdf(data, teacherId, bos);
+        return bos.toByteArray();
+    }
+
+    @Override
+    public byte[] renderStreamPdfToBytes(TimetableRepository.TimetableWithEntries data, String stream) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+        writeCombinedPdf(data, "Stream", stream, entries -> {
+            List<TimetableEntry> filtered = new ArrayList<>();
+            for (TimetableEntry e : entries) {
+                TeachingAssignment a = assignmentMap().get(e.getTeachingAssignmentId());
+                if (a != null) {
+                    ClassStream cs = classStreamRepository.findById(a.getClassStreamId()).orElse(null);
+                    if (cs != null && stream.equals(cs.getStream())) {
+                        filtered.add(e);
+                    }
+                }
+            }
+            return filtered;
+        }, bos);
+        return bos.toByteArray();
+    }
+
+    @Override
+    public byte[] renderGradePdfToBytes(TimetableRepository.TimetableWithEntries data, int form) {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream(65536);
+        writeCombinedPdf(data, "Form", String.valueOf(form), entries -> {
+            List<TimetableEntry> filtered = new ArrayList<>();
+            for (TimetableEntry e : entries) {
+                TeachingAssignment a = assignmentMap().get(e.getTeachingAssignmentId());
+                if (a != null) {
+                    ClassStream cs = classStreamRepository.findById(a.getClassStreamId()).orElse(null);
+                    if (cs != null && cs.getForm() == form) {
+                        filtered.add(e);
+                    }
+                }
+            }
+            return filtered;
+        }, bos);
+        return bos.toByteArray();
     }
 
     private void writePdf(TimetableRepository.TimetableWithEntries data, OutputStream output) {
@@ -342,5 +382,390 @@ public class PdfTimetableExporter implements TimetableExporter {
             grouped.computeIfAbsent(classKey, k -> new ArrayList<>()).add(entry);
         }
         return grouped;
+    }
+
+    private Map<Long, TeachingAssignment> assignmentMap() {
+        return assignmentRepository.findAll().stream()
+                .collect(Collectors.toMap(TeachingAssignment::getId, a -> a));
+    }
+
+    private void writeTeacherPdf(TimetableRepository.TimetableWithEntries data, Long teacherId, OutputStream output) {
+        PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+        PDType1Font fontBold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+
+        try (PDDocument doc = new PDDocument()) {
+            List<Period> periods = periodRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(Period::getPeriodNumber))
+                    .toList();
+            List<BreakPeriod> breaks = breakRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(BreakPeriod::getSortOrder))
+                    .toList();
+            List<TimeBlock> timeline = DailyTimelineGenerator.generate(periods, breaks);
+            Map<Long, TeachingAssignment> assignmentMap = assignmentMap();
+
+            Teacher teacher = teacherRepository.findById(teacherId)
+                    .orElseThrow(() -> new IllegalArgumentException("Teacher not found: " + teacherId));
+
+            List<TimetableEntry> teacherEntries = data.entries().stream()
+                    .filter(e -> {
+                        TeachingAssignment a = assignmentMap.get(e.getTeachingAssignmentId());
+                        return a != null && a.getTeacherId().equals(teacherId);
+                    })
+                    .toList();
+
+            PDRectangle pageSize = new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth());
+            PDPage page = new PDPage(pageSize);
+            doc.addPage(page);
+
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                renderTeacherPage(cs, pageSize, data, teacher, teacherEntries, timeline, assignmentMap, font, fontBold);
+            }
+
+            doc.save(output);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to render teacher PDF", e);
+        }
+    }
+
+    private void renderTeacherPage(PDPageContentStream cs, PDRectangle pageSize,
+                                    TimetableRepository.TimetableWithEntries data,
+                                    Teacher teacher, List<TimetableEntry> entries,
+                                    List<TimeBlock> timeline,
+                                    Map<Long, TeachingAssignment> assignmentMap,
+                                    PDType1Font font, PDType1Font fontBold) throws IOException {
+        float margin = 30;
+        float yTop = pageSize.getHeight() - margin;
+        float tableLeft = margin;
+        float tableWidth = pageSize.getWidth() - 2 * margin;
+
+        float dayColW = 70;
+        float nonLessonColW = 50;
+        int numLessons = (int) timeline.stream().filter(t -> t.blockType() == BlockType.LESSON).count();
+        int numNonLessons = timeline.size() - numLessons;
+        float lessonColW = numLessons > 0
+                ? (tableWidth - dayColW - numNonLessons * nonLessonColW) / numLessons
+                : 0;
+
+        float titleH = 18;
+        float headerH = 32;
+        float rowH = 44;
+
+        cs.setFont(fontBold, 13);
+        drawText(cs, tableLeft, yTop, "Teacher Timetable — " + teacher.getName());
+
+        cs.setFont(font, 9);
+        drawText(cs, tableLeft, yTop - 14, data.timetable().getName());
+
+        float y = yTop - titleH - 10;
+
+        drawCellBg(cs, tableLeft, y, dayColW, headerH, null);
+        drawCellBorder(cs, tableLeft, y, dayColW, headerH);
+
+        float cx = tableLeft + dayColW;
+        for (TimeBlock block : timeline) {
+            float colW = block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
+
+            drawCellBg(cs, cx, y, colW, headerH, null);
+            drawCellBorder(cs, cx, y, colW, headerH);
+
+            if (block instanceof LessonBlock lb) {
+                cs.setFont(fontBold, 10);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 12,
+                        String.valueOf(lb.periodNumber()), fontBold, 10);
+                cs.setFont(font, 7);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 24,
+                        lb.startTime() + " - " + lb.endTime(), font, 7);
+            } else {
+                cs.setFont(font, 6);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 12,
+                        block.startTime() + " - " + block.endTime(), font, 6);
+                cs.setFont(fontBold, 7);
+                drawTextCentered(cs, cx, cx + colW, y + headerH - 22,
+                        block.label().toUpperCase(), fontBold, 7);
+            }
+            cx += colW;
+        }
+
+        y -= headerH;
+
+        Map<String, List<TimetableEntry>> entryLookup = new HashMap<>();
+        for (TimetableEntry entry : entries) {
+            entryLookup.computeIfAbsent(entry.getDayOfWeek().name(), k -> new ArrayList<>()).add(entry);
+        }
+
+        List<DayOfWeek> days = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+
+        cx = tableLeft + dayColW;
+        for (TimeBlock block : timeline) {
+            if (block.blockType() != BlockType.LESSON) {
+                float colW = nonLessonColW;
+                float bch = days.size() * rowH;
+                drawCellBg(cs, cx, y, colW, bch, "#EFEFEF");
+                drawCellBorder(cs, cx, y, colW, bch);
+
+                String label = block.label().toUpperCase();
+                cs.saveGraphicsState();
+                cs.transform(Matrix.getTranslateInstance(cx + colW / 2, y - bch / 2));
+                cs.transform(Matrix.getRotateInstance(Math.toRadians(90), 0f, 0f));
+                cs.beginText();
+                cs.setFont(fontBold, 11);
+                float tw = fontBold.getStringWidth(label) / 1000f * 11;
+                cs.newLineAtOffset(-tw / 2, -3);
+                cs.showText(label);
+                cs.endText();
+                cs.restoreGraphicsState();
+            }
+            cx += block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
+        }
+
+        cx = tableLeft + dayColW;
+        for (int r = 0; r < days.size(); r++) {
+            DayOfWeek day = days.get(r);
+            boolean altRow = r % 2 == 1;
+            String bgColor = altRow ? "#F9F9F9" : null;
+
+            drawCellBg(cs, tableLeft, y, dayColW, rowH, bgColor);
+            drawCellBorder(cs, tableLeft, y, dayColW, rowH);
+            cs.setFont(fontBold, 10);
+            drawTextCentered(cs, tableLeft, tableLeft + dayColW, y + rowH / 2f + 3,
+                    day.displayName(), fontBold, 10);
+
+            List<TimetableEntry> dayEntries = entryLookup.getOrDefault(day.name(), List.of());
+            float colX = tableLeft + dayColW;
+            for (TimeBlock block : timeline) {
+                float colW = block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
+                float cellMidY = y + rowH / 2f;
+
+                if (block instanceof LessonBlock lb) {
+                    drawCellBg(cs, colX, y, colW, rowH, bgColor);
+                    drawCellBorder(cs, colX, y, colW, rowH);
+
+                    int pn = lb.periodNumber();
+                    TimetableEntry match = findEntry(dayEntries, pn);
+                    if (match != null) {
+                        TeachingAssignment assignment = assignmentMap.get(match.getTeachingAssignmentId());
+                        if (assignment != null) {
+                            String subjectCode = subjectRepository.findById(assignment.getSubjectId())
+                                    .map(s -> {
+                                        String n = s.getName();
+                                        return n != null ? n.trim().substring(0, Math.min(4, n.trim().length())).toUpperCase() : "?";
+                                    })
+                                    .orElse("?");
+                            String className = classStreamRepository.findById(assignment.getClassStreamId())
+                                    .map(ClassStream::getDisplayName)
+                                    .orElse("?");
+                            String roomCode = match.getRoomId() != null
+                                    ? roomRepository.findById(match.getRoomId())
+                                        .map(Room::getCode)
+                                        .orElse(null)
+                                    : null;
+
+                            float pad = 4;
+                            float innerX = colX + pad;
+
+                            cs.setFont(fontBold, 9);
+                            drawTextCentered(cs, colX, colX + colW, cellMidY + 6, subjectCode, fontBold, 9);
+
+                            cs.setFont(font, 7);
+                            drawText(cs, innerX, y + 9, className);
+
+                            if (roomCode != null) {
+                                float roomW = font.getStringWidth(roomCode) / 1000f * 7;
+                                drawText(cs, colX + colW - pad - roomW, y + 9, roomCode);
+                            }
+                        }
+                    }
+                } else {
+                    drawCellBorder(cs, colX, y, colW, rowH);
+                }
+                colX += colW;
+            }
+            y -= rowH;
+        }
+    }
+
+    @FunctionalInterface
+    private interface EntryFilter {
+        List<TimetableEntry> filter(List<TimetableEntry> entries);
+    }
+
+    private void writeCombinedPdf(TimetableRepository.TimetableWithEntries data, String groupLabel, String groupValue,
+                                   EntryFilter filter, OutputStream output) {
+        PDType1Font font = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+        PDType1Font fontBold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+
+        try (PDDocument doc = new PDDocument()) {
+            List<Period> periods = periodRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(Period::getPeriodNumber))
+                    .toList();
+            List<BreakPeriod> breaks = breakRepository.findAll().stream()
+                    .sorted(Comparator.comparingInt(BreakPeriod::getSortOrder))
+                    .toList();
+            List<TimeBlock> timeline = DailyTimelineGenerator.generate(periods, breaks);
+            Map<Long, TeachingAssignment> assignmentMap = assignmentMap();
+
+            List<TimetableEntry> filtered = filter.filter(data.entries());
+            Set<Long> classIds = filtered.stream()
+                    .map(e -> assignmentMap.get(e.getTeachingAssignmentId()))
+                    .filter(Objects::nonNull)
+                    .map(TeachingAssignment::getClassStreamId)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
+
+            if (classIds.isEmpty()) return;
+
+            List<ClassStream> classes = classIds.stream()
+                    .map(id -> classStreamRepository.findById(id).orElse(null))
+                    .filter(Objects::nonNull)
+                    .toList();
+
+            String classListStr = classes.stream().map(ClassStream::getDisplayName).collect(Collectors.joining(", "));
+
+            PDRectangle pageSize = new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth());
+            PDPage page = new PDPage(pageSize);
+            doc.addPage(page);
+
+            try (PDPageContentStream cs = new PDPageContentStream(doc, page)) {
+                renderCombinedDayPage(cs, pageSize, data, groupLabel, groupValue, classListStr,
+                        classes, filtered, timeline, assignmentMap, font, fontBold);
+            }
+
+            doc.save(output);
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to render combined PDF", e);
+        }
+    }
+
+    private void renderCombinedDayPage(PDPageContentStream cs, PDRectangle pageSize,
+                                        TimetableRepository.TimetableWithEntries data,
+                                        String groupLabel, String groupValue, String classListStr,
+                                        List<ClassStream> classes, List<TimetableEntry> entries,
+                                        List<TimeBlock> timeline,
+                                        Map<Long, TeachingAssignment> assignmentMap,
+                                        PDType1Font font, PDType1Font fontBold) throws IOException {
+        float margin = 24;
+        float yTop = pageSize.getHeight() - margin;
+        float tableLeft = margin;
+        float tableWidth = pageSize.getWidth() - 2 * margin;
+
+        int numLessons = (int) timeline.stream().filter(t -> t.blockType() == BlockType.LESSON).count();
+        int numNonLessons = timeline.size() - numLessons;
+        float nonLessonColW = 36;
+
+        float classColW = 48;
+        float lessonColW = numLessons > 0
+                ? (tableWidth - classColW - numNonLessons * nonLessonColW) / numLessons
+                : 0;
+
+        float rowH = 20;
+        float headerH = 22;
+        float sectionH = 4;
+
+        List<DayOfWeek> days = List.of(DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY,
+                DayOfWeek.THURSDAY, DayOfWeek.FRIDAY);
+
+        String title = groupLabel + " " + groupValue + " — " + classListStr;
+        cs.setFont(fontBold, 12);
+        drawText(cs, tableLeft, yTop, title);
+
+        cs.setFont(font, 8);
+        drawText(cs, tableLeft, yTop - 13, data.timetable().getName());
+
+        float y = yTop - 22;
+
+        for (int d = 0; d < days.size(); d++) {
+            DayOfWeek day = days.get(d);
+
+            float daySectionH = (classes.size() + 1) * rowH + sectionH;
+            if (y - daySectionH < margin) {
+                break;
+            }
+            y -= sectionH;
+
+            float headerY = y;
+            drawCellBg(cs, tableLeft, headerY, classColW, headerH, "#E8F0FE");
+            drawCellBorder(cs, tableLeft, headerY, classColW, headerH);
+            cs.setFont(fontBold, 9);
+            drawTextCentered(cs, tableLeft, tableLeft + classColW, headerY + headerH / 2f + 3,
+                    day.displayName(), fontBold, 9);
+
+            float cx = tableLeft + classColW;
+            for (TimeBlock block : timeline) {
+                float colW = block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
+                drawCellBg(cs, cx, headerY, colW, headerH, "#E8F0FE");
+                drawCellBorder(cs, cx, headerY, colW, headerH);
+
+                if (block instanceof LessonBlock lb) {
+                    cs.setFont(fontBold, 8);
+                    drawTextCentered(cs, cx, cx + colW, headerY + headerH - 10,
+                            String.valueOf(lb.periodNumber()), fontBold, 8);
+                    cs.setFont(font, 6);
+                    drawTextCentered(cs, cx, cx + colW, headerY + headerH - 18,
+                            lb.startTime() + "-" + lb.endTime(), font, 6);
+                } else {
+                    cs.setFont(font, 5);
+                    drawTextCentered(cs, cx, cx + colW, headerY + 8,
+                            block.label().toUpperCase(), font, 5);
+                }
+                cx += colW;
+            }
+
+            y -= headerH;
+
+            for (int c = 0; c < classes.size(); c++) {
+                ClassStream csObj = classes.get(c);
+                boolean altRow = c % 2 == 1;
+                String bgColor = altRow ? "#F9F9F9" : null;
+
+                drawCellBg(cs, tableLeft, y, classColW, rowH, bgColor);
+                drawCellBorder(cs, tableLeft, y, classColW, rowH);
+                cs.setFont(fontBold, 8);
+                drawTextCentered(cs, tableLeft, tableLeft + classColW, y + rowH / 2f + 2,
+                        csObj.getDisplayName(), fontBold, 8);
+
+                float colX = tableLeft + classColW;
+                for (TimeBlock block : timeline) {
+                    float colW = block.blockType() == BlockType.LESSON ? lessonColW : nonLessonColW;
+
+                    if (block instanceof LessonBlock lb) {
+                        drawCellBg(cs, colX, y, colW, rowH, bgColor);
+                        drawCellBorder(cs, colX, y, colW, rowH);
+
+                        int pn = lb.periodNumber();
+                        TimetableEntry match = null;
+                        for (TimetableEntry e : entries) {
+                            if (e.getDayOfWeek() == day && e.getPeriodNumber() == pn) {
+                                TeachingAssignment a = assignmentMap.get(e.getTeachingAssignmentId());
+                                if (a != null && a.getClassStreamId().equals(csObj.getId())) {
+                                    match = e;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (match != null) {
+                            TeachingAssignment a = assignmentMap.get(match.getTeachingAssignmentId());
+                            if (a != null) {
+                                String subjectCode = subjectRepository.findById(a.getSubjectId())
+                                        .map(s -> s.getCode())
+                                        .orElse("?");
+                                String teacherInit = teacherRepository.findById(a.getTeacherId())
+                                        .map(t -> NameFormatter.initials(t.getName()))
+                                        .orElse("?");
+
+                                cs.setFont(fontBold, 7);
+                                drawTextCentered(cs, colX, colX + colW, y + rowH - 7, subjectCode, fontBold, 7);
+                                cs.setFont(font, 6);
+                                drawTextCentered(cs, colX, colX + colW, y + 3, teacherInit, font, 6);
+                            }
+                        }
+                    } else {
+                        drawCellBorder(cs, colX, y, colW, rowH);
+                    }
+                    colX += colW;
+                }
+                y -= rowH;
+            }
+        }
     }
 }
