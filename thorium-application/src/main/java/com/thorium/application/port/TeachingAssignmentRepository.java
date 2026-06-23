@@ -13,6 +13,8 @@ public interface TeachingAssignmentRepository {
 
     List<TeachingAssignment> findAll();
 
+    List<TeachingAssignment> findByTeacherId(Long teacherId);
+
     void deleteById(Long id);
 
     long count();

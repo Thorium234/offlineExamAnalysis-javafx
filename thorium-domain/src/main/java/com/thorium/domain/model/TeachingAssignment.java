@@ -9,16 +9,24 @@ public class TeachingAssignment {
     private Long subjectId;
     private Long classStreamId;
     private int lessonsPerWeek;
+    private LessonDuration duration;
 
     public TeachingAssignment() {
+        this.duration = LessonDuration.SINGLE;
     }
 
     public TeachingAssignment(Long id, Long teacherId, Long subjectId, Long classStreamId, int lessonsPerWeek) {
+        this(id, teacherId, subjectId, classStreamId, lessonsPerWeek, LessonDuration.SINGLE);
+    }
+
+    public TeachingAssignment(Long id, Long teacherId, Long subjectId, Long classStreamId,
+                               int lessonsPerWeek, LessonDuration duration) {
         this.id = id;
         this.teacherId = teacherId;
         this.subjectId = subjectId;
         this.classStreamId = classStreamId;
         this.lessonsPerWeek = lessonsPerWeek;
+        this.duration = duration != null ? duration : LessonDuration.SINGLE;
     }
 
     public Long getId() {
@@ -59,6 +67,14 @@ public class TeachingAssignment {
 
     public void setLessonsPerWeek(int lessonsPerWeek) {
         this.lessonsPerWeek = lessonsPerWeek;
+    }
+
+    public LessonDuration getDuration() {
+        return duration;
+    }
+
+    public void setDuration(LessonDuration duration) {
+        this.duration = duration != null ? duration : LessonDuration.SINGLE;
     }
 
     @Override

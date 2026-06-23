@@ -49,7 +49,7 @@ public class AssignmentManagementController {
                     teacherCombo.getValue().id(), teacherCombo.getValue().name(),
                     subjectCombo.getValue().id(), subjectCombo.getValue().name(),
                     classCombo.getValue().id(), classCombo.getValue().displayName(),
-                    lessonsSpinner.getValue());
+                    lessonsSpinner.getValue(), com.thorium.domain.model.LessonDuration.SINGLE);
             if (editingId == null) AppContext.get().assignmentManagementUseCase().create(dto);
             else AppContext.get().assignmentManagementUseCase().update(dto);
             clearForm(); refreshTable(); showMessage("Saved", false);

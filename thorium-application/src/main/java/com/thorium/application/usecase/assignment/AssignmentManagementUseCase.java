@@ -53,6 +53,10 @@ public class AssignmentManagementUseCase {
         return assignmentRepository.findAll().stream().map(this::toDto).toList();
     }
 
+    public List<TeachingAssignmentDto> findByTeacherId(Long teacherId) {
+        return assignmentRepository.findByTeacherId(teacherId).stream().map(this::toDto).toList();
+    }
+
     private TeachingAssignmentDto toDto(TeachingAssignment assignment) {
         String teacherName = teacherRepository.findById(assignment.getTeacherId())
                 .map(t -> t.getName()).orElse("Unknown");
@@ -68,7 +72,8 @@ public class AssignmentManagementUseCase {
                 subjectName,
                 assignment.getClassStreamId(),
                 className,
-                assignment.getLessonsPerWeek()
+                assignment.getLessonsPerWeek(),
+                assignment.getDuration()
         );
     }
 
@@ -79,6 +84,7 @@ public class AssignmentManagementUseCase {
         assignment.setSubjectId(dto.subjectId());
         assignment.setClassStreamId(dto.classStreamId());
         assignment.setLessonsPerWeek(dto.lessonsPerWeek());
+        assignment.setDuration(dto.duration());
         return assignment;
     }
 

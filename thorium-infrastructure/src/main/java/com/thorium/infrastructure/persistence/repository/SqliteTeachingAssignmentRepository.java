@@ -1,6 +1,7 @@
 package com.thorium.infrastructure.persistence.repository;
 
 import com.thorium.application.port.TeachingAssignmentRepository;
+import com.thorium.domain.model.LessonDuration;
 import com.thorium.domain.model.TeachingAssignment;
 import com.thorium.infrastructure.persistence.SQLiteConnectionProvider;
 
@@ -32,8 +33,8 @@ public class SqliteTeachingAssignmentRepository extends AbstractRepository imple
 
     private void insert(Connection conn, TeachingAssignment a) throws SQLException {
         String sql = """
-                INSERT INTO teaching_assignments (teacher_id, subject_id, class_stream_id, lessons_per_week)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO teaching_assignments (teacher_id, subject_id, class_stream_id, lessons_per_week, duration)
+                VALUES (?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bind(ps, a);
@@ -48,12 +49,12 @@ public class SqliteTeachingAssignmentRepository extends AbstractRepository imple
 
     private void update(Connection conn, TeachingAssignment a) throws SQLException {
         String sql = """
-                UPDATE teaching_assignments SET teacher_id=?, subject_id=?, class_stream_id=?, lessons_per_week=?
+                UPDATE teaching_assignments SET teacher_id=?, subject_id=?, class_stream_id=?, lessons_per_week=?, duration=?
                 WHERE id=?
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, a);
-            ps.setLong(5, a.getId());
+            ps.setLong(6, a.getId());
             ps.executeUpdate();
         }
     }
@@ -63,6 +64,7 @@ public class SqliteTeachingAssignmentRepository extends AbstractRepository imple
         ps.setLong(2, a.getSubjectId());
         ps.setLong(3, a.getClassStreamId());
         ps.setInt(4, a.getLessonsPerWeek());
+        ps.setString(5, a.getDuration().name());
     }
 
     @Override
@@ -93,6 +95,24 @@ public class SqliteTeachingAssignmentRepository extends AbstractRepository imple
     }
 
     @Override
+    public List<TeachingAssignment> findByTeacherId(Long teacherId) {
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT * FROM teaching_assignments WHERE teacher_id = ? ORDER BY id")) {
+            ps.setLong(1, teacherId);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<TeachingAssignment> list = new ArrayList<>();
+                while (rs.next()) {
+                    list.add(map(rs));
+                }
+                return list;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to find assignments by teacher", e);
+        }
+    }
+
+    @Override
     public void deleteById(Long id) {
         try (Connection conn = connection();
              PreparedStatement ps = conn.prepareStatement("DELETE FROM teaching_assignments WHERE id = ?")) {
@@ -115,12 +135,19 @@ public class SqliteTeachingAssignmentRepository extends AbstractRepository imple
     }
 
     private TeachingAssignment map(ResultSet rs) throws SQLException {
+        LessonDuration duration;
+        try {
+            duration = LessonDuration.valueOf(rs.getString("duration"));
+        } catch (Exception e) {
+            duration = LessonDuration.SINGLE;
+        }
         return new TeachingAssignment(
                 rs.getLong("id"),
                 rs.getLong("teacher_id"),
                 rs.getLong("subject_id"),
                 rs.getLong("class_stream_id"),
-                rs.getInt("lessons_per_week")
+                rs.getInt("lessons_per_week"),
+                duration
         );
     }
 }

@@ -37,6 +37,9 @@ public class MainController {
     @FXML
     private Button themeToggleBtn;
 
+    @FXML
+    private Button generateBtn;
+
     private final AppContext appContext = AppContext.get();
     private boolean darkMode;
     private final Preferences prefs = Preferences.userNodeForPackage(MainController.class);
@@ -70,7 +73,6 @@ public class MainController {
                 new NavItem("Subjects", ICON_SUBJECTS, "#f59e0b"),
                 new NavItem("Classes", ICON_CLASSES, "#8b5cf6"),
                 new NavItem("Rooms", ICON_ROOMS, "#ef4444"),
-                new NavItem("Assignments", ICON_ASSIGNMENTS, "#06b6d4"),
                 new NavItem("Periods", ICON_PERIODS, "#f97316"),
                 new NavItem("Breaks", ICON_BREAKS, "#14b8a6"),
                 new NavItem("Availability", ICON_AVAILABILITY, "#e11d48"),
@@ -129,6 +131,14 @@ public class MainController {
         applyTheme();
     }
 
+    @FXML
+    private void onGenerate() {
+        navigationList.getSelectionModel().select(
+                navigationList.getItems().stream()
+                        .filter(n -> n.label().equals("Generate Timetable"))
+                        .findFirst().orElse(null));
+    }
+
     private void applyTheme() {
         Scene scene = themeToggleBtn.getScene();
         if (scene == null) return;
@@ -163,7 +173,6 @@ public class MainController {
                 case "Subjects" -> "/fxml/subjects.fxml";
                 case "Classes" -> "/fxml/classes.fxml";
                 case "Rooms" -> "/fxml/rooms.fxml";
-                case "Assignments" -> "/fxml/assignments.fxml";
                 case "Periods" -> "/fxml/periods.fxml";
                 case "Breaks" -> "/fxml/breaks.fxml";
                 case "Availability" -> "/fxml/availability.fxml";

@@ -66,6 +66,7 @@ class TimetableGenerationIntegrationTest {
                 teacher.id(), teacher.name(),
                 subject.id(), subject.name(),
                 classStream.id(), classStream.displayName(),
-                5));
+                5,
+                com.thorium.domain.model.LessonDuration.SINGLE));
     }
 }

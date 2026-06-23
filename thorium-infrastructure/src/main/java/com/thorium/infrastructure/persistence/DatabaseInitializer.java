@@ -14,7 +14,7 @@ import java.time.format.DateTimeFormatter;
 public class DatabaseInitializer {
 
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 10;
+    private static final int SCHEMA_VERSION = 11;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -72,6 +72,10 @@ public class DatabaseInitializer {
             if (currentVersion < 10) {
                 runMigrationV10(statement);
                 setVersion(statement, 10);
+            }
+            if (currentVersion < 11) {
+                runMigrationV11(statement);
+                setVersion(statement, 11);
             }
 
             connection.commit();
@@ -233,6 +237,14 @@ public class DatabaseInitializer {
         }
         try {
             statement.execute("ALTER TABLE periods ADD COLUMN break_id INTEGER REFERENCES breaks(id) ON DELETE SET NULL");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+    }
+
+    private void runMigrationV11(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE teaching_assignments ADD COLUMN duration TEXT NOT NULL DEFAULT 'SINGLE' CHECK (duration IN ('SINGLE', 'DOUBLE'))");
         } catch (SQLException e) {
             if (!e.getMessage().contains("duplicate column")) throw e;
         }

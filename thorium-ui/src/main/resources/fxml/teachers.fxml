@@ -34,4 +34,19 @@
         <Button fx:id="clearBtn" text="Clear" onAction="#onClear"/>
     </HBox>
     <Label fx:id="messageLabel"/>
+    <Separator/>
+    <HBox alignment="CENTER_LEFT" spacing="12">
+        <Label text="Teaching Contracts (Lessons)" style="-fx-font-weight: bold; -fx-font-size: 14px; -fx-text-fill: #0f172a;"/>
+        <Region HBox.hgrow="ALWAYS"/>
+        <Button fx:id="newLessonBtn" text="New Lesson" onAction="#onNewLesson" style="-fx-background-color: #16a34a; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 6 14 6 14; -fx-cursor: hand;"/>
+    </HBox>
+    <TableView fx:id="lessonTable" prefHeight="160">
+        <columns>
+            <TableColumn fx:id="lessonSubjectColumn" text="Subject" prefWidth="150"/>
+            <TableColumn fx:id="lessonClassColumn" text="Class" prefWidth="150"/>
+            <TableColumn fx:id="lessonCountColumn" text="Lessons/Week" prefWidth="100"/>
+            <TableColumn fx:id="lessonDurationColumn" text="Duration" prefWidth="80"/>
+            <TableColumn fx:id="lessonDeleteColumn" text="" prefWidth="50"/>
+        </columns>
+    </TableView>
 </VBox>

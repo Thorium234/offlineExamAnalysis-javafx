@@ -83,6 +83,7 @@ class ExportTimetableExporterTest {
                 .create(new TeachingAssignmentDto(
                         null, teacher.id(), teacher.name(),
                         subject.id(), subject.name(),
-                        classStream.id(), classStream.displayName(), 5));
+                        classStream.id(), classStream.displayName(), 5,
+                        com.thorium.domain.model.LessonDuration.SINGLE));
     }
 }

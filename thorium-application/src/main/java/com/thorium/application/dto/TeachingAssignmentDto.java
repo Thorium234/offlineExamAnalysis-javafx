@@ -1,5 +1,7 @@
 package com.thorium.application.dto;
 
+import com.thorium.domain.model.LessonDuration;
+
 public record TeachingAssignmentDto(
         Long id,
         Long teacherId,
@@ -8,6 +10,10 @@ public record TeachingAssignmentDto(
         String subjectName,
         Long classStreamId,
         String classStreamName,
-        int lessonsPerWeek
+        int lessonsPerWeek,
+        LessonDuration duration
 ) {
+    public TeachingAssignmentDto {
+        if (duration == null) duration = LessonDuration.SINGLE;
+    }
 }
