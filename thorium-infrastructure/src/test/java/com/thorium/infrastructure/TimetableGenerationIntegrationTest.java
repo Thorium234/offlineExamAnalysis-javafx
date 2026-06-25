@@ -55,7 +55,7 @@ class TimetableGenerationIntegrationTest {
     }
 
     private void seedData() {
-        TeacherDto teacher = teacherUseCase.create(new TeacherDto(null, "T001", "John Doe", 6, 30, true));
+        TeacherDto teacher = teacherUseCase.create(new TeacherDto(null, "T001", "John Doe", true));
         SubjectDto subject = subjectUseCase.create(new SubjectDto(
                 null, "S001", "Geography", true, 5, false, false));
         ClassStreamDto classStream = classUseCase.create(new ClassStreamDto(

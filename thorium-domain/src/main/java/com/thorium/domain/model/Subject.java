@@ -8,21 +8,29 @@ public class Subject {
     private String code;
     private String name;
     private boolean examinable;
+    private boolean cbcSubject;
     private int cbcDefaultLessons;
     private boolean allowsDoublePeriod;
     private boolean requiresDoublePeriod;
     private String color;
 
     public Subject() {
+        this.cbcSubject = true;
         this.cbcDefaultLessons = 5;
     }
 
     public Subject(Long id, String code, String name, boolean examinable, int cbcDefaultLessons,
                    boolean allowsDoublePeriod, boolean requiresDoublePeriod, String color) {
+        this(id, code, name, examinable, examinable, cbcDefaultLessons, allowsDoublePeriod, requiresDoublePeriod, color);
+    }
+
+    public Subject(Long id, String code, String name, boolean examinable, boolean cbcSubject, int cbcDefaultLessons,
+                   boolean allowsDoublePeriod, boolean requiresDoublePeriod, String color) {
         this.id = id;
         this.code = code;
         this.name = name;
         this.examinable = examinable;
+        this.cbcSubject = cbcSubject;
         this.cbcDefaultLessons = cbcDefaultLessons;
         this.allowsDoublePeriod = allowsDoublePeriod;
         this.requiresDoublePeriod = requiresDoublePeriod;
@@ -94,7 +102,11 @@ public class Subject {
     }
 
     public boolean isCbcSubject() {
-        return examinable;
+        return cbcSubject;
+    }
+
+    public void setCbcSubject(boolean cbcSubject) {
+        this.cbcSubject = cbcSubject;
     }
 
     @Override

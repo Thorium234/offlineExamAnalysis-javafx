@@ -61,11 +61,6 @@
                     <Label text="Latest Timetable" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
                     <Label fx:id="latestTimetable" text="None" style="-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
                 </VBox>
-                <VBox spacing="4" style="-fx-background-color: white; -fx-background-radius: 10; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-padding: 20; -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.04), 6, 0, 0, 2);" GridPane.columnIndex="2" GridPane.rowIndex="2">
-                    <StackPane fx:id="workloadIcon" prefWidth="32" prefHeight="32"/>
-                    <Label text="Teachers >90% Load" style="-fx-text-fill: #64748b; -fx-font-size: 12px; -fx-padding: 8 0 0 0;"/>
-                    <Label fx:id="workloadCount" text="0" style="-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: #0f172a;"/>
-                </VBox>
             </GridPane>
         </VBox>
     </ScrollPane>

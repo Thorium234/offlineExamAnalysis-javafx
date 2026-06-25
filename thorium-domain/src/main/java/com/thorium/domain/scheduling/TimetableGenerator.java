@@ -8,8 +8,11 @@ import com.thorium.domain.scheduling.optimization.OptimizationStrategy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class TimetableGenerator {
+
+    private static final Logger LOG = Logger.getLogger(TimetableGenerator.class.getName());
 
     private final GreedyScheduler greedyScheduler;
     private final BacktrackingScheduler backtrackingScheduler;
@@ -30,9 +33,13 @@ public class TimetableGenerator {
     }
 
     public TimetableGenerationResult generate(SchedulingContext context) {
+        LOG.info("Starting timetable generation with " + context.assignments().size() + " assignments");
+        long start = System.currentTimeMillis();
+
         PartialSchedule greedyResult = greedyScheduler.schedule(context);
         int required = context.assignments().stream()
                 .mapToInt(a -> a.getLessonsPerWeek()).sum();
+        LOG.fine("Greedy scheduler placed " + greedyResult.size() + "/" + required + " lessons");
 
         TimetableGenerationResult result;
         if (greedyResult.size() >= required) {
@@ -41,16 +48,25 @@ public class TimetableGenerator {
             if (validation.isValid()) {
                 double quality = softScorer.score(greedyResult, context);
                 result = TimetableGenerationResult.success(greedyResult, quality);
+                LOG.info("Greedy schedule succeeded (quality=" + String.format("%.3f", quality) + ")");
             } else {
+                LOG.fine("Greedy validation failed, falling back to backtracking from scratch");
                 result = backtrackingScheduler.resolve(context, new PartialSchedule());
             }
         } else {
+            LOG.fine("Greedy incomplete (" + greedyResult.size() + "/" + required + "), resolving with backtracking");
             result = backtrackingScheduler.resolve(context, greedyResult);
         }
 
         if (result.isSuccess() && optimizationStrategy.isPresent()) {
-            return optimizationStrategy.get().optimize(result, context);
+            LOG.fine("Running optimization strategy");
+            result = optimizationStrategy.get().optimize(result, context);
         }
+
+        long elapsed = System.currentTimeMillis() - start;
+        LOG.info("Generation finished in " + elapsed + "ms: success=" + result.isSuccess()
+                + ", placed=" + result.schedule().size() + "/" + required
+                + ", quality=" + String.format("%.3f", result.qualityScore()));
         return result;
     }
 

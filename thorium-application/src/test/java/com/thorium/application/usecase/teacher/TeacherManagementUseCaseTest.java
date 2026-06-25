@@ -18,7 +18,7 @@ class TeacherManagementUseCaseTest {
     @Test
     void createsTeacher() {
         TeacherDto created = useCase.create(new TeacherDto(
-                null, "T001", "Jane Doe", 6, 30, true));
+                null, "T001", "Jane Doe", true));
 
         assertNotNull(created.id());
         assertEquals("T001", created.code());
@@ -28,30 +28,23 @@ class TeacherManagementUseCaseTest {
 
     @Test
     void updatesTeacher() {
-        TeacherDto created = useCase.create(new TeacherDto(null, "T001", "Jane Doe", 6, 30, true));
+        TeacherDto created = useCase.create(new TeacherDto(null, "T001", "Jane Doe", true));
         TeacherDto updated = useCase.update(new TeacherDto(
-                created.id(), "T001", "Jane Smith", 5, 25, false));
+                created.id(), "T001", "Jane Smith", false));
 
         assertEquals("Jane Smith", updated.name());
-        assertEquals(5, updated.maxLessonsPerDay());
         assertFalse(updated.active());
     }
 
     @Test
     void rejectsBlankCode() {
         assertThrows(IllegalArgumentException.class, () ->
-                useCase.create(new TeacherDto(null, "  ", "Jane", 6, 30, true)));
-    }
-
-    @Test
-    void rejectsNonPositiveLimits() {
-        assertThrows(IllegalArgumentException.class, () ->
-                useCase.create(new TeacherDto(null, "T002", "Jane", 0, 30, true)));
+                useCase.create(new TeacherDto(null, "  ", "Jane", true)));
     }
 
     @Test
     void deletesTeacher() {
-        TeacherDto created = useCase.create(new TeacherDto(null, "T001", "Jane", 6, 30, true));
+        TeacherDto created = useCase.create(new TeacherDto(null, "T001", "Jane", true));
         useCase.delete(created.id());
         assertTrue(useCase.findAll().isEmpty());
     }

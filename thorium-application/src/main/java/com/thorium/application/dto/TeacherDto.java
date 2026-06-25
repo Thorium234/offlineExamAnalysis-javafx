@@ -4,8 +4,6 @@ public record TeacherDto(
         Long id,
         String code,
         String name,
-        int maxLessonsPerDay,
-        int maxLessonsPerWeek,
         boolean active
 ) {
 }

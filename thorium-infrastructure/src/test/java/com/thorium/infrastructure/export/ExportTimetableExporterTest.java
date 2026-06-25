@@ -73,7 +73,7 @@ class ExportTimetableExporterTest {
 
     private void seedData() {
         TeacherDto teacher = bootstrap.teacherManagementUseCase()
-                .create(new TeacherDto(null, "T001", "John Doe", 6, 30, true));
+                .create(new TeacherDto(null, "T001", "John Doe", true));
         SubjectDto subject = bootstrap.subjectManagementUseCase()
                 .create(new SubjectDto(null, "S001", "Geography", true, 5, false, false));
         ClassStreamDto classStream = bootstrap.classStreamManagementUseCase()

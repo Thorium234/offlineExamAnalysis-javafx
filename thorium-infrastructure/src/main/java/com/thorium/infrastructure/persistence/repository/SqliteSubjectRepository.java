@@ -32,8 +32,8 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
 
     private void insert(Connection conn, Subject subject) throws SQLException {
         String sql = """
-                INSERT INTO subjects (code, name, examinable, cbc_default_lessons, allows_double_period, requires_double_period, color)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO subjects (code, name, examinable, cbc_subject, cbc_default_lessons, allows_double_period, requires_double_period, color)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             bind(ps, subject);
@@ -48,12 +48,12 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
 
     private void update(Connection conn, Subject subject) throws SQLException {
         String sql = """
-                UPDATE subjects SET code=?, name=?, examinable=?, cbc_default_lessons=?, allows_double_period=?, requires_double_period=?, color=?
+                UPDATE subjects SET code=?, name=?, examinable=?, cbc_subject=?, cbc_default_lessons=?, allows_double_period=?, requires_double_period=?, color=?
                 WHERE id=?
                 """;
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             bind(ps, subject);
-            ps.setLong(8, subject.getId());
+            ps.setLong(9, subject.getId());
             ps.executeUpdate();
         }
     }
@@ -62,10 +62,11 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
         ps.setString(1, subject.getCode());
         ps.setString(2, subject.getName());
         ps.setInt(3, subject.isExaminable() ? 1 : 0);
-        ps.setInt(4, subject.getCbcDefaultLessons());
-        ps.setInt(5, subject.isAllowsDoublePeriod() ? 1 : 0);
-        ps.setInt(6, subject.isRequiresDoublePeriod() ? 1 : 0);
-        ps.setString(7, subject.getColor());
+        ps.setInt(4, subject.isCbcSubject() ? 1 : 0);
+        ps.setInt(5, subject.getCbcDefaultLessons());
+        ps.setInt(6, subject.isAllowsDoublePeriod() ? 1 : 0);
+        ps.setInt(7, subject.isRequiresDoublePeriod() ? 1 : 0);
+        ps.setString(8, subject.getColor());
     }
 
     @Override
@@ -118,16 +119,22 @@ public class SqliteSubjectRepository extends AbstractRepository implements Subje
     }
 
     private Subject map(ResultSet rs) throws SQLException {
-        Subject subject = new Subject(
+        boolean cbcSubject;
+        try {
+            cbcSubject = rs.getInt("cbc_subject") == 1;
+        } catch (SQLException e) {
+            cbcSubject = rs.getInt("examinable") == 1;
+        }
+        return new Subject(
                 rs.getLong("id"),
                 rs.getString("code"),
                 rs.getString("name"),
                 rs.getInt("examinable") == 1,
+                cbcSubject,
                 rs.getInt("cbc_default_lessons"),
                 rs.getInt("allows_double_period") == 1,
                 rs.getInt("requires_double_period") == 1,
                 rs.getString("color")
         );
-        return subject;
     }
 }

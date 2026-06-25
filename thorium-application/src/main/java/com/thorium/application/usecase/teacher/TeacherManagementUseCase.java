@@ -51,8 +51,5 @@ public class TeacherManagementUseCase {
         if (dto.name() == null || dto.name().isBlank()) {
             throw new IllegalArgumentException("Teacher name is required");
         }
-        if (dto.maxLessonsPerDay() <= 0 || dto.maxLessonsPerWeek() <= 0) {
-            throw new IllegalArgumentException("Lesson limits must be positive");
-        }
     }
 }

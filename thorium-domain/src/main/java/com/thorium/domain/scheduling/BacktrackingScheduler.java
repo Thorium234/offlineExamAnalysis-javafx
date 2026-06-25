@@ -14,8 +14,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Logger;
 
 public class BacktrackingScheduler {
+
+    private static final Logger LOG = Logger.getLogger(BacktrackingScheduler.class.getName());
 
     private static final int MAX_ITERATIONS = 100_000;
 
@@ -28,12 +31,15 @@ public class BacktrackingScheduler {
     }
 
     public TimetableGenerationResult resolve(SchedulingContext context, PartialSchedule initial) {
+        LOG.fine("Attempting STRICT tier backtracking (initial=" + initial.size() + " placed)");
         TimetableGenerationResult result = tryResolve(context, initial, Tier.STRICT);
         if (result != null) return result;
 
+        LOG.fine("STRICT tier failed, attempting RELAXED tier");
         result = tryResolve(context, initial, Tier.RELAXED);
         if (result != null) return result;
 
+        LOG.warning("Backtracking solver failed under all constraint tiers");
         return TimetableGenerationResult.failure(
                 List.of("Backtracking solver failed to find a valid layout under any constraint tier."));
     }
@@ -114,9 +120,18 @@ public class BacktrackingScheduler {
         if (domain == null || domain.isEmpty()) return false;
 
         List<ScheduleSlot> candidates = domain.stream()
-                .filter(slot -> tier == Tier.STRICT
-                        ? hardValidator.canPlace(item.assignment(), slot, schedule, context)
-                        : passesCoreConstraints(item.assignment(), slot, schedule, context))
+                .filter(slot -> {
+                    if (tier == Tier.STRICT) {
+                        if (!hardValidator.canPlace(item.assignment(), slot, schedule, context)) return false;
+                        if (item.requiresConsecutive()) {
+                            ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
+                            if (!hardValidator.canPlace(item.assignment(), next, schedule, context)) return false;
+                        }
+                        return true;
+                    } else {
+                        return passesCoreConstraints(item.assignment(), slot, schedule, context);
+                    }
+                })
                 .sorted(Comparator.<ScheduleSlot, Double>comparing(
                         slot -> -softScorer.scorePlacement(item.assignment(), slot, schedule, context))
                         .thenComparingDouble(slot -> (double) tracker.countPrunedByPlacement(item, slot)))
@@ -125,6 +140,15 @@ public class BacktrackingScheduler {
         for (ScheduleSlot slot : candidates) {
             PlacedLesson placed = new PlacedLesson(item.assignment(), slot);
             schedule.place(placed);
+
+            if (item.requiresConsecutive()) {
+                ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
+                if (!hardValidator.canPlace(item.assignment(), next, schedule, context)) {
+                    schedule.removeLast();
+                    continue;
+                }
+                schedule.place(new PlacedLesson(item.assignment(), next));
+            }
 
             List<PrunedPair> pruned = tracker.placeAndPrune(item, slot);
 
@@ -135,7 +159,10 @@ public class BacktrackingScheduler {
             }
 
             tracker.restore(pruned, item);
-            schedule.removeLast();
+            PlacedLesson removed = schedule.removeLast();
+            if (item.requiresConsecutive()) {
+                schedule.removeLast();
+            }
         }
 
         return false;
@@ -163,11 +190,14 @@ public class BacktrackingScheduler {
             this.history = new ArrayDeque<>();
 
             List<ScheduleSlot> allSlots = context.allSlots();
+            int periodsPerDay = context.periodsPerDay();
 
             for (var item : items) {
                 TeachingAssignment ta = item.assignment();
                 Set<ScheduleSlot> valid = new HashSet<>();
+                int maxPeriod = item.requiresConsecutive() ? periodsPerDay - 1 : periodsPerDay;
                 for (ScheduleSlot slot : allSlots) {
+                    if (slot.periodNumber() > maxPeriod) continue;
                     if (context.isTeacherUnavailable(ta.getTeacherId(), slot)) continue;
                     valid.add(slot);
                 }
@@ -226,6 +256,18 @@ public class BacktrackingScheduler {
             long teacherId = placed.assignment().getTeacherId();
             long classId = placed.assignment().getClassStreamId();
 
+            pruned.addAll(pruneSlotFromOthers(slot, teacherId, classId));
+            if (placed.requiresConsecutive()) {
+                ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
+                pruned.addAll(pruneSlotFromOthers(next, teacherId, classId));
+            }
+
+            history.push(pruned);
+            return pruned;
+        }
+
+        private List<PrunedPair> pruneSlotFromOthers(ScheduleSlot slot, long teacherId, long classId) {
+            List<PrunedPair> pruned = new ArrayList<>();
             for (var other : byTeacher.getOrDefault(teacherId, List.of())) {
                 if (assigned.contains(other)) continue;
                 Set<ScheduleSlot> d = domains.get(other);
@@ -233,7 +275,6 @@ public class BacktrackingScheduler {
                     pruned.add(new PrunedPair(other, slot));
                 }
             }
-
             for (var other : byClass.getOrDefault(classId, List.of())) {
                 if (assigned.contains(other)) continue;
                 Set<ScheduleSlot> d = domains.get(other);
@@ -241,8 +282,6 @@ public class BacktrackingScheduler {
                     pruned.add(new PrunedPair(other, slot));
                 }
             }
-
-            history.push(pruned);
             return pruned;
         }
 
@@ -262,16 +301,7 @@ public class BacktrackingScheduler {
         }
 
         void pruneBySlotStatic(long teacherId, long classId, ScheduleSlot slot) {
-            for (var other : byTeacher.getOrDefault(teacherId, List.of())) {
-                if (assigned.contains(other)) continue;
-                Set<ScheduleSlot> d = domains.get(other);
-                if (d != null) d.remove(slot);
-            }
-            for (var other : byClass.getOrDefault(classId, List.of())) {
-                if (assigned.contains(other)) continue;
-                Set<ScheduleSlot> d = domains.get(other);
-                if (d != null) d.remove(slot);
-            }
+            pruneSlotFromOthers(slot, teacherId, classId);
         }
 
         boolean hasEmptyDomain() {
@@ -316,7 +346,8 @@ public class BacktrackingScheduler {
         long count = schedule.placedLessons().stream()
                 .filter(p -> p.assignment().getId().equals(assignment.getId()))
                 .count();
-        return count < assignment.getLessonsPerWeek();
+        if (count >= assignment.getLessonsPerWeek()) return false;
+        return true;
     }
 
     private List<String> merge(List<String> a, List<String> b) {

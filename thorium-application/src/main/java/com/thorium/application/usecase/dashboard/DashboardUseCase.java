@@ -2,7 +2,6 @@ package com.thorium.application.usecase.dashboard;
 
 import com.thorium.application.dto.DashboardSummaryDto;
 import com.thorium.application.port.*;
-import com.thorium.domain.model.Teacher;
 import com.thorium.domain.model.TeachingAssignment;
 
 public class DashboardUseCase {
@@ -37,23 +36,6 @@ public class DashboardUseCase {
                 .mapToLong(TeachingAssignment::getLessonsPerWeek)
                 .sum();
 
-        var teachers = teacherRepository.findAll();
-        long overloaded = 0;
-        long nearCapacity = 0;
-
-        for (Teacher teacher : teachers) {
-            int assigned = assignments.stream()
-                    .filter(a -> a.getTeacherId().equals(teacher.getId()))
-                    .mapToInt(TeachingAssignment::getLessonsPerWeek)
-                    .sum();
-            int max = teacher.getMaxLessonsPerWeek();
-            if (max > 0) {
-                double pct = (double) assigned / max;
-                if (pct > 0.9) overloaded++;
-                else if (pct >= 0.7) nearCapacity++;
-            }
-        }
-
         return new DashboardSummaryDto(
                 teacherRepository.count(),
                 subjectRepository.count(),
@@ -62,10 +44,7 @@ public class DashboardUseCase {
                 totalLessons,
                 timetables.size(),
                 roomRepository.count(),
-                latestName,
-                overloaded,
-                nearCapacity,
-                teachers.size() - overloaded - nearCapacity
+                latestName
         );
     }
 }

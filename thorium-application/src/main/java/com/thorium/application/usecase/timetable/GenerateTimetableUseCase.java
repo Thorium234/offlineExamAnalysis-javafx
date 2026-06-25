@@ -12,10 +12,15 @@ import com.thorium.domain.value.SubjectColorPalette;
 import com.thorium.domain.value.TimetableStatus;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class GenerateTimetableUseCase {
+
+    private static final DateTimeFormatter NAME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private final TimetableRepository timetableRepository;
     private final TeachingAssignmentRepository assignmentRepository;
@@ -81,7 +86,7 @@ public class GenerateTimetableUseCase {
         }
 
         Timetable timetable = new Timetable();
-        timetable.setName(name != null && !name.isBlank() ? name : "Timetable " + LocalDateTime.now());
+        timetable.setName(name != null && !name.isBlank() ? name : "Timetable " + LocalDateTime.now().format(NAME_FORMAT));
         timetable.setStatus(TimetableStatus.GENERATED);
         timetable.setCreatedAt(LocalDateTime.now());
         timetable.setQualityScore(result.qualityScore());
@@ -107,8 +112,19 @@ public class GenerateTimetableUseCase {
     }
 
     private TimetableDto toDto(TimetableRepository.TimetableWithEntries data) {
+        Map<Long, TeachingAssignment> assignmentMap = new HashMap<>();
+        Map<Long, Teacher> teacherMap = new HashMap<>();
+        Map<Long, Subject> subjectMap = new HashMap<>();
+        Map<Long, ClassStream> classStreamMap = new HashMap<>();
+        Map<Long, Room> roomMap = new HashMap<>();
+        for (var a : assignmentRepository.findAll()) assignmentMap.put(a.getId(), a);
+        for (var t : teacherRepository.findAll()) teacherMap.put(t.getId(), t);
+        for (var s : subjectRepository.findAll()) subjectMap.put(s.getId(), s);
+        for (var c : classStreamRepository.findAll()) classStreamMap.put(c.getId(), c);
+        for (var r : roomRepository.findAll()) roomMap.put(r.getId(), r);
+
         List<TimetableEntryDto> entryDtos = data.entries().stream()
-                .map(this::toEntryDto)
+                .map(e -> toEntryDto(e, assignmentMap, teacherMap, subjectMap, classStreamMap, roomMap))
                 .toList();
         Timetable t = data.timetable();
         return new TimetableDto(t.getId(), t.getName(), t.getStatus(), t.getCreatedAt(), t.getQualityScore(), entryDtos);
@@ -118,14 +134,19 @@ public class GenerateTimetableUseCase {
         return new TimetableDto(t.getId(), t.getName(), t.getStatus(), t.getCreatedAt(), t.getQualityScore(), List.of());
     }
 
-    private TimetableEntryDto toEntryDto(TimetableEntry entry) {
-        TeachingAssignment assignment = assignmentRepository.findById(entry.getTeachingAssignmentId())
-                .orElseThrow();
-        Teacher teacher = teacherRepository.findById(assignment.getTeacherId()).orElseThrow();
-        Subject subject = subjectRepository.findById(assignment.getSubjectId()).orElseThrow();
-        ClassStream classStream = classStreamRepository.findById(assignment.getClassStreamId()).orElseThrow();
+    private TimetableEntryDto toEntryDto(TimetableEntry entry, Map<Long, TeachingAssignment> assignmentMap,
+                                          Map<Long, Teacher> teacherMap, Map<Long, Subject> subjectMap,
+                                          Map<Long, ClassStream> classStreamMap, Map<Long, Room> roomMap) {
+        TeachingAssignment assignment = assignmentMap.get(entry.getTeachingAssignmentId());
+        if (assignment == null) throw new IllegalStateException("Assignment not found for entry " + entry.getId());
+        Teacher teacher = teacherMap.get(assignment.getTeacherId());
+        if (teacher == null) throw new IllegalStateException("Teacher not found for assignment " + assignment.getId());
+        Subject subject = subjectMap.get(assignment.getSubjectId());
+        if (subject == null) throw new IllegalStateException("Subject not found for assignment " + assignment.getId());
+        ClassStream classStream = classStreamMap.get(assignment.getClassStreamId());
+        if (classStream == null) throw new IllegalStateException("ClassStream not found for assignment " + assignment.getId());
         String roomCode = entry.getRoomId() != null
-                ? roomRepository.findById(entry.getRoomId()).map(Room::getCode).orElse(null)
+                ? roomMap.get(entry.getRoomId()).getCode()
                 : null;
         return new TimetableEntryDto(
                 entry.getId(),

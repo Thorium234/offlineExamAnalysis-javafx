@@ -12,12 +12,9 @@ import javafx.collections.FXCollections;
 import javafx.collections.transformation.FilteredList;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
-import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.stage.Modality;
-import javafx.stage.Stage;
 
 public class TeacherManagementController {
 
@@ -25,12 +22,8 @@ public class TeacherManagementController {
     @FXML private TextField searchField;
     @FXML private TableColumn<TeacherDto, String> codeColumn;
     @FXML private TableColumn<TeacherDto, String> nameColumn;
-    @FXML private TableColumn<TeacherDto, Number> maxDayColumn;
-    @FXML private TableColumn<TeacherDto, Number> maxWeekColumn;
     @FXML private TextField codeField;
     @FXML private TextField nameField;
-    @FXML private Spinner<Integer> maxDaySpinner;
-    @FXML private Spinner<Integer> maxWeekSpinner;
     @FXML private CheckBox activeCheck;
     @FXML private Label messageLabel;
     @FXML private Button saveBtn;
@@ -58,10 +51,6 @@ public class TeacherManagementController {
 
         codeColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().code()));
         nameColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().name()));
-        maxDayColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().maxLessonsPerDay()));
-        maxWeekColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().maxLessonsPerWeek()));
-        maxDaySpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 12, 6));
-        maxWeekSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 30));
         activeCheck.setSelected(true);
 
         lessonSubjectColumn.setCellValueFactory(cd -> new ReadOnlyObjectWrapper<>(cd.getValue().subjectName()));
@@ -115,8 +104,6 @@ public class TeacherManagementController {
                     editingId,
                     codeField.getText().trim(),
                     nameField.getText().trim(),
-                    maxDaySpinner.getValue(),
-                    maxWeekSpinner.getValue(),
                     activeCheck.isSelected()
             );
             if (editingId == null) {
@@ -167,7 +154,7 @@ public class TeacherManagementController {
             showMessage("Select a teacher first", true);
             return;
         }
-        showLessonDialog(null, teacher.id());
+        showLessonDialog(null, teacher.id(), teacher.name());
     }
 
     private void deleteLesson(TeachingAssignmentDto lesson) {
@@ -184,7 +171,7 @@ public class TeacherManagementController {
         lessonData.setAll(AppContext.get().assignmentManagementUseCase().findByTeacherId(teacherId));
     }
 
-    private void showLessonDialog(TeachingAssignmentDto existing, Long teacherId) {
+    private void showLessonDialog(TeachingAssignmentDto existing, Long teacherId, String teacherName) {
         Dialog<TeachingAssignmentDto> dialog = new Dialog<>();
         dialog.setTitle(existing == null ? "New Lesson" : "Edit Lesson");
         dialog.initModality(Modality.APPLICATION_MODAL);
@@ -198,11 +185,24 @@ public class TeacherManagementController {
                 setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
             }
         });
+        // Display selected value in the button area
+        subjectCombo.setButtonCell(new ListCell<SubjectDto>() {
+            @Override protected void updateItem(SubjectDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.name() + " (" + item.code() + ")");
+            }
+        });
 
         ComboBox<ClassStreamDto> classCombo = new ComboBox<>();
         classCombo.setPrefWidth(250);
         classCombo.setItems(FXCollections.observableArrayList(AppContext.get().classStreamManagementUseCase().findAll()));
         classCombo.setCellFactory(lv -> new ListCell<ClassStreamDto>() {
+            @Override protected void updateItem(ClassStreamDto item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.displayName());
+            }
+        });
+        classCombo.setButtonCell(new ListCell<ClassStreamDto>() {
             @Override protected void updateItem(ClassStreamDto item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty || item == null ? null : item.displayName());
@@ -233,6 +233,9 @@ public class TeacherManagementController {
         grid.add(new Label("Class:"), 0, 1); grid.add(classCombo, 1, 1);
         grid.add(new Label("Lessons/Week:"), 0, 2); grid.add(lessonsSpinner, 1, 2);
         grid.add(new Label("Duration:"), 0, 3); grid.add(durationCombo, 1, 3);
+        Label teacherLabel = new Label("Teacher: " + teacherName);
+        teacherLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #475569;");
+        grid.add(teacherLabel, 0, 4, 2, 1);
 
         dialog.getDialogPane().setContent(grid);
         dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
@@ -243,10 +246,9 @@ public class TeacherManagementController {
                 ClassStreamDto cls = classCombo.getValue();
                 if (subj == null || cls == null) return null;
                 LessonDuration dur = "DOUBLE".equals(durationCombo.getValue()) ? LessonDuration.DOUBLE : LessonDuration.SINGLE;
-                TeacherDto teacher = teacherTable.getSelectionModel().getSelectedItem();
                 return new TeachingAssignmentDto(
                         existing != null ? existing.id() : null,
-                        teacherId, teacher.name(),
+                        teacherId, teacherName,
                         subj.id(), subj.name(),
                         cls.id(), cls.displayName(),
                         lessonsSpinner.getValue(), dur
@@ -279,8 +281,6 @@ public class TeacherManagementController {
         editingId = dto.id();
         codeField.setText(dto.code());
         nameField.setText(dto.name());
-        maxDaySpinner.getValueFactory().setValue(dto.maxLessonsPerDay());
-        maxWeekSpinner.getValueFactory().setValue(dto.maxLessonsPerWeek());
         activeCheck.setSelected(dto.active());
     }
 
@@ -288,8 +288,6 @@ public class TeacherManagementController {
         editingId = null;
         codeField.clear();
         nameField.clear();
-        maxDaySpinner.getValueFactory().setValue(6);
-        maxWeekSpinner.getValueFactory().setValue(30);
         activeCheck.setSelected(true);
         teacherTable.getSelectionModel().clearSelection();
         lessonData.clear();

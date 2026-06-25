@@ -28,7 +28,7 @@ class SqliteTeacherRepositoryTest {
 
     @Test
     void savesAndFindsTeacher() {
-        Teacher teacher = new Teacher(null, "T001", "Alice", 6, 30, true);
+        Teacher teacher = new Teacher(null, "T001", "Alice", true);
         Teacher saved = repository.save(teacher);
 
         assertNotNull(saved.getId());
@@ -39,7 +39,7 @@ class SqliteTeacherRepositoryTest {
 
     @Test
     void updatesTeacher() {
-        Teacher saved = repository.save(new Teacher(null, "T001", "Alice", 6, 30, true));
+        Teacher saved = repository.save(new Teacher(null, "T001", "Alice", true));
         saved.setName("Alice Updated");
         repository.save(saved);
 
@@ -49,7 +49,7 @@ class SqliteTeacherRepositoryTest {
 
     @Test
     void deletesTeacher() {
-        Teacher saved = repository.save(new Teacher(null, "T001", "Alice", 6, 30, true));
+        Teacher saved = repository.save(new Teacher(null, "T001", "Alice", true));
         repository.deleteById(saved.getId());
         assertTrue(repository.findById(saved.getId()).isEmpty());
         assertEquals(0, repository.count());
@@ -57,7 +57,7 @@ class SqliteTeacherRepositoryTest {
 
     @Test
     void findsByCode() {
-        repository.save(new Teacher(null, "T001", "Alice", 6, 30, true));
+        repository.save(new Teacher(null, "T001", "Alice", true));
         Teacher found = repository.findByCode("T001").orElseThrow();
         assertEquals("Alice", found.getName());
     }

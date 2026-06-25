@@ -165,3 +165,29 @@
     -fx-text-fill: #334155;
     -fx-font-weight: 600;
 }
+
+.nav-btn {
+    -fx-background-color: transparent;
+    -fx-background-radius: 6;
+    -fx-padding: 6 4 4 4;
+    -fx-cursor: hand;
+}
+
+.nav-btn-selected {
+    -fx-background-color: #e2e8f0;
+}
+
+.nav-label {
+    -fx-font-size: 10px;
+    -fx-text-fill: #475569;
+    -fx-font-weight: 600;
+}
+
+.nav-label-selected {
+    -fx-text-fill: #0f172a;
+    -fx-font-weight: 700;
+}
+
+.nav-separator {
+    -fx-border-color: #e2e8f0;
+}

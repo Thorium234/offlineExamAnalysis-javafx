@@ -10,7 +10,9 @@ import com.thorium.domain.scheduling.SchedulingContext;
 import com.thorium.domain.scheduling.TimetableGenerationResult;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 public class HillClimbingStrategy implements OptimizationStrategy {
@@ -81,13 +83,30 @@ public class HillClimbingStrategy implements OptimizationStrategy {
             PlacedLesson swapped1 = new PlacedLesson(lesson1.assignment(), slot2);
             PlacedLesson swapped2 = new PlacedLesson(lesson2.assignment(), slot1);
 
-            if (hardValidator.canPlace(swapped1.assignment(), swapped1.slot(), trial, context)
-                    && hardValidator.canPlace(swapped2.assignment(), swapped2.slot(), trial, context)) {
-                trial.place(swapped1);
-                trial.place(swapped2);
+            if (!hardValidator.canPlace(swapped1.assignment(), swapped1.slot(), trial, context)
+                    || !hardValidator.canPlace(swapped2.assignment(), swapped2.slot(), trial, context)) {
+                continue;
+            }
+            trial.place(swapped1);
+            trial.place(swapped2);
+            if (countsValid(trial, context)) {
                 return trial;
             }
         }
         return null;
+    }
+
+    private boolean countsValid(PartialSchedule schedule, SchedulingContext context) {
+        Map<Long, Integer> counts = new HashMap<>();
+        for (var lesson : schedule.placedLessons()) {
+            counts.merge(lesson.assignment().getId(), 1, Integer::sum);
+        }
+        for (var assignment : context.assignments()) {
+            int placed = counts.getOrDefault(assignment.getId(), 0);
+            if (placed != assignment.getLessonsPerWeek()) {
+                return false;
+            }
+        }
+        return true;
     }
 }

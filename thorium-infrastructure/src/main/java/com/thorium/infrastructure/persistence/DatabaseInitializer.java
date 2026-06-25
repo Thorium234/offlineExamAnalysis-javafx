@@ -6,15 +6,19 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.logging.Logger;
 
 public class DatabaseInitializer {
 
+    private static final Logger LOG = Logger.getLogger(DatabaseInitializer.class.getName());
+
     private static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
-    private static final int SCHEMA_VERSION = 11;
+    private static final int SCHEMA_VERSION = 12;
 
     private final SQLiteConnectionProvider connectionProvider;
 
@@ -23,70 +27,105 @@ public class DatabaseInitializer {
     }
 
     public void initialize() {
-        try (Connection connection = connectionProvider.getConnection();
-             Statement statement = connection.createStatement()) {
-            createSchemaVersionTable(statement);
+        LOG.info("Initializing database schema");
+        long start = System.currentTimeMillis();
+        try (Connection connection = connectionProvider.getConnection()) {
+            createSchemaVersionTable(connection);
             int currentVersion = getCurrentVersion(connection);
+            LOG.fine("Current schema version: " + currentVersion);
 
             if (currentVersion < 1) {
                 for (String sql : loadSchema().split(";")) {
                     String trimmed = sql.trim();
                     if (!trimmed.isEmpty()) {
-                        statement.execute(trimmed);
+                        try (Statement stmt = connection.createStatement()) {
+                            stmt.execute(trimmed);
+                        }
                     }
                 }
-                setVersion(statement, 1);
+                setVersion(connection, 1);
             }
             if (currentVersion < 2) {
-                runMigrationV2(statement);
-                setVersion(statement, 2);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV2(stmt);
+                }
+                setVersion(connection, 2);
             }
             if (currentVersion < 3) {
-                runMigrationV3(statement);
-                setVersion(statement, 3);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV3(stmt);
+                }
+                setVersion(connection, 3);
             }
             if (currentVersion < 4) {
-                runMigrationV4(statement);
-                setVersion(statement, 4);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV4(stmt);
+                }
+                setVersion(connection, 4);
             }
             if (currentVersion < 5) {
-                runMigrationV5(statement);
-                setVersion(statement, 5);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV5(stmt);
+                }
+                setVersion(connection, 5);
             }
             if (currentVersion < 6) {
-                runMigrationV6(statement);
-                setVersion(statement, 6);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV6(stmt);
+                }
+                setVersion(connection, 6);
             }
             if (currentVersion < 7) {
-                runMigrationV7(statement);
-                setVersion(statement, 7);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV7(stmt);
+                }
+                setVersion(connection, 7);
             }
             if (currentVersion < 8) {
-                runMigrationV8(statement);
-                setVersion(statement, 8);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV8(stmt);
+                }
+                setVersion(connection, 8);
             }
             if (currentVersion < 9) {
-                runMigrationV9(statement);
-                setVersion(statement, 9);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV9(stmt);
+                }
+                setVersion(connection, 9);
             }
             if (currentVersion < 10) {
-                runMigrationV10(statement);
-                setVersion(statement, 10);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV10(stmt);
+                }
+                setVersion(connection, 10);
             }
             if (currentVersion < 11) {
-                runMigrationV11(statement);
-                setVersion(statement, 11);
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV11(stmt);
+                }
+                setVersion(connection, 11);
+            }
+            if (currentVersion < 12) {
+                try (Statement stmt = connection.createStatement()) {
+                    runMigrationV12(stmt);
+                }
+                setVersion(connection, 12);
             }
 
             connection.commit();
             seedDefaults();
+            long elapsed = System.currentTimeMillis() - start;
+            LOG.info("Database initialization complete (" + elapsed + "ms, version " + getCurrentVersion(connection) + ")");
         } catch (SQLException e) {
+            LOG.severe("Database initialization failed: " + e.getMessage());
             throw new IllegalStateException("Failed to initialize database", e);
         }
     }
 
-    private void createSchemaVersionTable(Statement statement) throws SQLException {
-        statement.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)");
+    private void createSchemaVersionTable(Connection connection) throws SQLException {
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute("CREATE TABLE IF NOT EXISTS schema_version (version INTEGER NOT NULL)");
+        }
     }
 
     private int getCurrentVersion(Connection connection) throws SQLException {
@@ -95,8 +134,11 @@ public class DatabaseInitializer {
         }
     }
 
-    private void setVersion(Statement statement, int version) throws SQLException {
-        statement.execute("INSERT INTO schema_version (version) VALUES (" + version + ")");
+    private void setVersion(Connection connection, int version) throws SQLException {
+        try (PreparedStatement ps = connection.prepareStatement("INSERT INTO schema_version (version) VALUES (?)")) {
+            ps.setInt(1, version);
+            ps.executeUpdate();
+        }
     }
 
     private void runMigrationV2(Statement statement) throws SQLException {
@@ -245,6 +287,15 @@ public class DatabaseInitializer {
     private void runMigrationV11(Statement statement) throws SQLException {
         try {
             statement.execute("ALTER TABLE teaching_assignments ADD COLUMN duration TEXT NOT NULL DEFAULT 'SINGLE' CHECK (duration IN ('SINGLE', 'DOUBLE'))");
+        } catch (SQLException e) {
+            if (!e.getMessage().contains("duplicate column")) throw e;
+        }
+    }
+
+    private void runMigrationV12(Statement statement) throws SQLException {
+        try {
+            statement.execute("ALTER TABLE subjects ADD COLUMN cbc_subject INTEGER NOT NULL DEFAULT 1 CHECK (cbc_subject IN (0, 1))");
+            statement.execute("UPDATE subjects SET cbc_subject = examinable");
         } catch (SQLException e) {
             if (!e.getMessage().contains("duplicate column")) throw e;
         }

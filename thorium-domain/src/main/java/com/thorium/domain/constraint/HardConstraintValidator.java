@@ -2,7 +2,6 @@ package com.thorium.domain.constraint;
 
 import com.thorium.domain.model.ScheduleSlot;
 import com.thorium.domain.model.Subject;
-import com.thorium.domain.model.Teacher;
 import com.thorium.domain.model.TeachingAssignment;
 import com.thorium.domain.model.TimetableEntry;
 import com.thorium.domain.scheduling.PlacedLesson;
@@ -38,12 +37,6 @@ public class HardConstraintValidator {
             return false;
         }
         if (violatesRequiredDouble(assignment, slot, schedule, context)) {
-            return false;
-        }
-        if (exceedsTeacherMaxPerDay(assignment, slot, schedule, context, excludeEntryId)) {
-            return false;
-        }
-        if (exceedsTeacherMaxPerWeek(assignment, schedule, context, excludeEntryId)) {
             return false;
         }
         if (exceedsWeeklyCount(assignment, schedule, excludeEntryId)) {
@@ -97,31 +90,6 @@ public class HardConstraintValidator {
             }
         }
 
-        // Teacher-level hard constraints per day and per week
-        Map<Long, Map<DayOfWeek, Integer>> teacherDayCounts = new HashMap<>();
-        Map<Long, Integer> teacherTotalCounts = new HashMap<>();
-        for (PlacedLesson placed : schedule.placedLessons()) {
-            Long tid = placed.assignment().getTeacherId();
-            teacherDayCounts.computeIfAbsent(tid, k -> new HashMap<>())
-                    .merge(placed.slot().dayOfWeek(), 1, Integer::sum);
-            teacherTotalCounts.merge(tid, 1, Integer::sum);
-        }
-        for (var entry : teacherDayCounts.entrySet()) {
-            Teacher teacher = context.teacher(entry.getKey()).orElse(null);
-            if (teacher == null) continue;
-            for (var dayEntry : entry.getValue().entrySet()) {
-                if (dayEntry.getValue() > teacher.getMaxLessonsPerDay()) {
-                    errors.add("Teacher " + teacher.getName() + " has " + dayEntry.getValue()
-                            + " lessons on " + dayEntry.getKey() + ", max is " + teacher.getMaxLessonsPerDay());
-                }
-            }
-            int weeklyTotal = teacherTotalCounts.getOrDefault(entry.getKey(), 0);
-            if (weeklyTotal > teacher.getMaxLessonsPerWeek()) {
-                errors.add("Teacher " + teacher.getName() + " has " + weeklyTotal
-                        + " lessons/week, max is " + teacher.getMaxLessonsPerWeek());
-            }
-        }
-
         Set<String> teacherSlots = new HashSet<>();
         Set<String> classSlots = new HashSet<>();
         for (PlacedLesson placed : schedule.placedLessons()) {
@@ -146,7 +114,7 @@ public class HardConstraintValidator {
         for (PlacedLesson lesson : lessons) {
             boolean hasPair = false;
             for (PlacedLesson other : lessons) {
-                if (lesson == other) continue;
+                if (lesson.equals(other)) continue;
                 if (lesson.slot().dayOfWeek() == other.slot().dayOfWeek()
                         && Math.abs(lesson.slot().periodNumber() - other.slot().periodNumber()) == 1) {
                     hasPair = true;
@@ -259,40 +227,6 @@ public class HardConstraintValidator {
         }
 
         return false;
-    }
-
-    private boolean exceedsTeacherMaxPerDay(TeachingAssignment assignment, ScheduleSlot slot,
-                                             PartialSchedule schedule, SchedulingContext context) {
-        return exceedsTeacherMaxPerDay(assignment, slot, schedule, context, null);
-    }
-
-    private boolean exceedsTeacherMaxPerDay(TeachingAssignment assignment, ScheduleSlot slot,
-                                             PartialSchedule schedule, SchedulingContext context,
-                                             Long excludeEntryId) {
-        Teacher teacher = context.teacher(assignment.getTeacherId()).orElse(null);
-        if (teacher == null) return false;
-        long countOnDay = schedule.placedLessons().stream()
-                .filter(p -> !matchesExcludedEntry(p, excludeEntryId))
-                .filter(p -> p.assignment().getTeacherId().equals(assignment.getTeacherId()))
-                .filter(p -> p.slot().dayOfWeek() == slot.dayOfWeek())
-                .count();
-        return countOnDay >= teacher.getMaxLessonsPerDay();
-    }
-
-    private boolean exceedsTeacherMaxPerWeek(TeachingAssignment assignment, PartialSchedule schedule,
-                                              SchedulingContext context) {
-        return exceedsTeacherMaxPerWeek(assignment, schedule, context, null);
-    }
-
-    private boolean exceedsTeacherMaxPerWeek(TeachingAssignment assignment, PartialSchedule schedule,
-                                              SchedulingContext context, Long excludeEntryId) {
-        Teacher teacher = context.teacher(assignment.getTeacherId()).orElse(null);
-        if (teacher == null) return false;
-        long total = schedule.placedLessons().stream()
-                .filter(p -> !matchesExcludedEntry(p, excludeEntryId))
-                .filter(p -> p.assignment().getTeacherId().equals(assignment.getTeacherId()))
-                .count();
-        return total >= teacher.getMaxLessonsPerWeek();
     }
 
     private boolean exceedsWeeklyCount(TeachingAssignment assignment, PartialSchedule schedule) {

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS subjects (
     code                 TEXT    NOT NULL UNIQUE,
     name                 TEXT    NOT NULL,
     examinable           INTEGER NOT NULL DEFAULT 0 CHECK (examinable IN (0, 1)),
+    cbc_subject          INTEGER NOT NULL DEFAULT 1 CHECK (cbc_subject IN (0, 1)),
     cbc_default_lessons  INTEGER NOT NULL DEFAULT 5,
     allows_double_period  INTEGER NOT NULL DEFAULT 0 CHECK (allows_double_period IN (0, 1)),
     requires_double_period INTEGER NOT NULL DEFAULT 0 CHECK (requires_double_period IN (0, 1)),

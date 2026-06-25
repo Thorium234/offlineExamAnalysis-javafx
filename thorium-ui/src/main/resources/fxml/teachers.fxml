@@ -28,8 +28,6 @@
                     <columns>
                         <TableColumn fx:id="codeColumn" text="Code" prefWidth="100"/>
                         <TableColumn fx:id="nameColumn" text="Name" prefWidth="250"/>
-                        <TableColumn fx:id="maxDayColumn" text="Max/Day" prefWidth="80"/>
-                        <TableColumn fx:id="maxWeekColumn" text="Max/Week" prefWidth="80"/>
                     </columns>
                 </TableView>
             </VBox>
@@ -46,11 +44,7 @@
                     <TextField fx:id="codeField" promptText="e.g. T001" style="-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: #f8fafc;" GridPane.columnIndex="1" GridPane.rowIndex="0" prefWidth="250"/>
                     <Label text="Name" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="1"/>
                     <TextField fx:id="nameField" promptText="e.g. John Doe" style="-fx-background-radius: 6; -fx-border-radius: 6; -fx-padding: 8 12; -fx-border-color: #e2e8f0; -fx-background-color: #f8fafc;" GridPane.columnIndex="1" GridPane.rowIndex="1" prefWidth="250"/>
-                    <Label text="Max/Day" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="2"/>
-                    <Spinner fx:id="maxDaySpinner" prefWidth="120" style="-fx-background-radius: 6; -fx-border-radius: 6;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
-                    <Label text="Max/Week" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="0" GridPane.rowIndex="3"/>
-                    <Spinner fx:id="maxWeekSpinner" prefWidth="120" style="-fx-background-radius: 6; -fx-border-radius: 6;" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-                    <CheckBox fx:id="activeCheck" text="Active" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                    <CheckBox fx:id="activeCheck" text="Active" style="-fx-font-weight: 600; -fx-text-fill: #475569;" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
                 </GridPane>
                 <HBox spacing="8" style="-fx-padding: 0 16 16 16;">
                     <Button fx:id="saveBtn" text="Save" onAction="#onSave" defaultButton="true" style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-padding: 8 20 8 20; -fx-cursor: hand;"/>

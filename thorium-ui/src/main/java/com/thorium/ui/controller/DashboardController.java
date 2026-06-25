@@ -21,7 +21,6 @@ public class DashboardController {
     @FXML private Label roomsCount;
     @FXML private Label timetablesCount;
     @FXML private Label latestTimetable;
-    @FXML private Label workloadCount;
     @FXML private StackPane teachersIcon;
     @FXML private StackPane subjectsIcon;
     @FXML private StackPane classesIcon;
@@ -30,7 +29,6 @@ public class DashboardController {
     @FXML private StackPane roomsIcon;
     @FXML private StackPane timetablesIcon;
     @FXML private StackPane latestIcon;
-    @FXML private StackPane workloadIcon;
     @FXML private Button refreshBtn;
 
     private static final String ICON_TEACHERS = "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z";
@@ -51,7 +49,6 @@ public class DashboardController {
         setIcon(roomsIcon, ICON_CLASSES, "#ef4444");
         setIcon(timetablesIcon, ICON_TIMETABLES, "#3b82f6");
         setIcon(latestIcon, ICON_LATEST, "#f97316");
-        setIcon(workloadIcon, ICON_TEACHERS, "#e11d48");
         refresh();
     }
 
@@ -70,7 +67,6 @@ public class DashboardController {
         roomsCount.setText(String.valueOf(summary.roomCount()));
         timetablesCount.setText(String.valueOf(summary.timetableCount()));
         latestTimetable.setText(summary.latestTimetableName());
-        workloadCount.setText(summary.teachersOverloaded() + " / " + summary.teachersNearCapacity() + " near");
     }
 
     private void setIcon(StackPane container, String svgPath, String color) {

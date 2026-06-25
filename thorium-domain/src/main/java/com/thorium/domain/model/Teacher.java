@@ -7,22 +7,16 @@ public class Teacher {
     private Long id;
     private String code;
     private String name;
-    private int maxLessonsPerDay;
-    private int maxLessonsPerWeek;
     private boolean active;
 
     public Teacher() {
-        this.maxLessonsPerDay = 6;
-        this.maxLessonsPerWeek = 30;
         this.active = true;
     }
 
-    public Teacher(Long id, String code, String name, int maxLessonsPerDay, int maxLessonsPerWeek, boolean active) {
+    public Teacher(Long id, String code, String name, boolean active) {
         this.id = id;
         this.code = code;
         this.name = name;
-        this.maxLessonsPerDay = maxLessonsPerDay;
-        this.maxLessonsPerWeek = maxLessonsPerWeek;
         this.active = active;
     }
 
@@ -48,22 +42,6 @@ public class Teacher {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public int getMaxLessonsPerDay() {
-        return maxLessonsPerDay;
-    }
-
-    public void setMaxLessonsPerDay(int maxLessonsPerDay) {
-        this.maxLessonsPerDay = maxLessonsPerDay;
-    }
-
-    public int getMaxLessonsPerWeek() {
-        return maxLessonsPerWeek;
-    }
-
-    public void setMaxLessonsPerWeek(int maxLessonsPerWeek) {
-        this.maxLessonsPerWeek = maxLessonsPerWeek;
     }
 
     public boolean isActive() {

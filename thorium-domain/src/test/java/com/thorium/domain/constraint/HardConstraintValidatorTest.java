@@ -21,7 +21,7 @@ class HardConstraintValidatorTest {
     @BeforeEach
     void setUp() {
         validator = new HardConstraintValidator();
-        Teacher teacher = new Teacher(1L, "T001", "John", 6, 30, true);
+        Teacher teacher = new Teacher(1L, "T001", "John", true);
         Subject subject = new Subject(1L, "S001", "Geography", true, 5, false, false, null);
         ClassStream classStream = new ClassStream(1L, "F1E", 1, "East", "Form 1 East");
         assignment = new TeachingAssignment(1L, 1L, 1L, 1L, 2);
@@ -68,7 +68,7 @@ class HardConstraintValidatorTest {
                 1L, 1L, DayOfWeek.FRIDAY, 4, false);
         SchedulingContext ctx = SchedulingContext.builder()
                 .assignments(List.of(assignment))
-                .teachers(List.of(new Teacher(1L, "T001", "John", 6, 30, true)))
+                .teachers(List.of(new Teacher(1L, "T001", "John", true)))
                 .subjects(List.of(new Subject(1L, "S001", "Geography", true, 5, false, false, null)))
                 .classStreams(List.of(new ClassStream(1L, "F1E", 1, "East", "Form 1 East")))
                 .teacherAvailability(List.of(unavailable))
