@@ -481,8 +481,8 @@ public class TimetableViewerController {
         if (card.roomId() == null && !isPoolCard) {
             // White stripes indicator for no-room placement
             node.setStyle(
-                    "-fx-background-color: repeating-linear-gradient(45deg, " +
-                    baseColor + ", " + baseColor + " 8px, #ffffff 8px, #ffffff 16px); " +
+                    "-fx-background-color: linear-gradient(from 0px 11.314px to 11.314px 0px, repeat, " +
+                    baseColor + " 0%, " + baseColor + " 50%, #ffffff 50%, #ffffff 100%); " +
                     "-fx-border-color: derive(" + baseColor + ", -25%); " +
                     "-fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px;"
             );
@@ -725,8 +725,8 @@ public class TimetableViewerController {
                 String origColor = card.subjectColor();
                 if (card.roomId() == null) {
                     node.setStyle(
-                            "-fx-background-color: repeating-linear-gradient(45deg, " +
-                            origColor + ", " + origColor + " 8px, #ffffff 8px, #ffffff 16px); " +
+                            "-fx-background-color: linear-gradient(from 0px 11.314px to 11.314px 0px, repeat, " +
+                            origColor + " 0%, " + origColor + " 50%, #ffffff 50%, #ffffff 100%); " +
                             "-fx-border-color: derive(" + origColor + ", -25%); " +
                             "-fx-border-width: 1.5px; -fx-border-radius: 6px; -fx-background-radius: 6px;"
                     );
