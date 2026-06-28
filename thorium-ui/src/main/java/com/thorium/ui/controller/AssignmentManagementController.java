@@ -85,11 +85,16 @@ public class AssignmentManagementController {
     }
 
     private void onTeacherSelected(TeacherDto t) {
-        selectedTeacher = t;
-        selectedTeacherLabel.setText("Subjects for: " + t.name() + " (" + t.code() + ")");
-        streamSubjectTeacherLabel.setText("Streams for: " + t.name());
-        renderSubjectToggles();
-        showStep(stepSubjects);
+        try {
+            selectedTeacher = t;
+            selectedTeacherLabel.setText("Subjects for: " + t.name() + " (" + t.code() + ")");
+            streamSubjectTeacherLabel.setText("Streams for: " + t.name());
+            renderSubjectToggles();
+            showStep(stepSubjects);
+        } catch (Exception e) {
+            showMessage(e.getClass().getSimpleName() + ": " + e.getMessage(), true);
+            e.printStackTrace();
+        }
     }
 
     private void renderSubjectToggles() {
