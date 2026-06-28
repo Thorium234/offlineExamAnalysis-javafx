@@ -73,7 +73,10 @@ public class TeacherSubjectController {
     private void loadAssignedSubjects(Long teacherId) {
         clearCheckboxes();
         var assigned = AppContext.get().teacherSubjectManagementUseCase().findByTeacherId(teacherId);
-        Set<Long> assignedIds = assigned.stream().map(ts -> ts.subjectId()).collect(Collectors.toSet());
+        Set<Long> assignedIds = new HashSet<>();
+        for (var ts : assigned) {
+            assignedIds.add(ts.subjectId());
+        }
         for (Map.Entry<Long, CheckBox> entry : subjectCheckboxes.entrySet()) {
             if (assignedIds.contains(entry.getKey())) {
                 entry.getValue().setSelected(true);
@@ -94,10 +97,11 @@ public class TeacherSubjectController {
             return;
         }
         try {
-            Set<Long> currentlyAssigned = AppContext.get().teacherSubjectManagementUseCase()
-                    .findByTeacherId(currentTeacherId).stream()
-                    .map(ts -> ts.subjectId())
-                    .collect(Collectors.toSet());
+            Set<Long> currentlyAssigned = new HashSet<>();
+            for (var ts : AppContext.get().teacherSubjectManagementUseCase()
+                    .findByTeacherId(currentTeacherId)) {
+                currentlyAssigned.add(ts.subjectId());
+            }
 
             Set<Long> selected = new HashSet<>();
             for (CheckBox cb : subjectCheckboxes.values()) {
