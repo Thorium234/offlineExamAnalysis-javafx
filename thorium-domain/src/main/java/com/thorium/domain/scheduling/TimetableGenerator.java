@@ -2,11 +2,14 @@ package com.thorium.domain.scheduling;
 
 import com.thorium.domain.constraint.HardConstraintValidator;
 import com.thorium.domain.constraint.SoftConstraintScorer;
+import com.thorium.domain.model.Teacher;
 import com.thorium.domain.scheduling.optimization.HillClimbingStrategy;
 import com.thorium.domain.scheduling.optimization.OptimizationStrategy;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -74,18 +77,23 @@ public class TimetableGenerator {
         List<String> issues = new ArrayList<>();
         int totalRequired = context.assignments().stream()
                 .mapToInt(a -> a.getLessonsPerWeek()).sum();
-        long classCount = countDistinctClasses(context);
-        if (totalRequired > (long) context.totalSlots() * classCount) {
+        int totalSlots = context.totalSlots();
+        if (totalRequired > totalSlots) {
             issues.add("Total required lessons (" + totalRequired
-                    + ") may exceed available class slots");
+                    + ") exceeds total available slots (" + totalSlots + ")");
+        }
+        Map<Long, Integer> teacherLoads = new HashMap<>();
+        for (var a : context.assignments()) {
+            teacherLoads.merge(a.getTeacherId(), a.getLessonsPerWeek(), Integer::sum);
+        }
+        for (var entry : teacherLoads.entrySet()) {
+            long teacherId = entry.getKey();
+            int load = entry.getValue();
+            if (load > totalSlots) {
+                String name = context.teacher(teacherId).map(Teacher::getName).orElse("ID " + teacherId);
+                issues.add("Teacher " + name + " has " + load + " lessons, exceeding available slots (" + totalSlots + ")");
+            }
         }
         return issues;
-    }
-
-    private long countDistinctClasses(SchedulingContext context) {
-        return context.assignments().stream()
-                .map(a -> a.getClassStreamId())
-                .distinct()
-                .count();
     }
 }

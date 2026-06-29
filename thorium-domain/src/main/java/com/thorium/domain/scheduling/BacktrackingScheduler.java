@@ -62,6 +62,26 @@ public class BacktrackingScheduler {
 
         DomainTracker tracker = new DomainTracker(workItems, context, hardValidator, tier);
 
+        int emptyDomains = 0;
+        int totalItems = 0;
+        int totalDomainSize = 0;
+        int minDomain = Integer.MAX_VALUE;
+        for (var entry : tracker.domains.entrySet()) {
+            if (tracker.assigned.contains(entry.getKey())) continue;
+            totalItems++;
+            int size = entry.getValue().size();
+            totalDomainSize += size;
+            if (size < minDomain) minDomain = size;
+            if (size == 0) emptyDomains++;
+        }
+        LOG.fine(tier + " tier domain stats: items=" + totalItems
+                + ", empty=" + emptyDomains
+                + ", minDomain=" + (minDomain == Integer.MAX_VALUE ? "N/A" : minDomain)
+                + ", avgDomain=" + (totalItems > 0 ? String.format("%.1f", (double) totalDomainSize / totalItems) : "N/A"));
+        if (emptyDomains > 0) {
+            LOG.warning(tier + " tier: " + emptyDomains + "/" + totalItems + " work items have empty domains");
+        }
+
         for (var placed : initial.placedLessons()) {
             long taId = placed.assignment().getId();
             for (var item : workItems) {
@@ -114,10 +134,17 @@ public class BacktrackingScheduler {
         if (iterations[0] >= MAX_ITERATIONS) return false;
 
         GreedyScheduler.AssignmentWorkItem item = tracker.selectMRV();
-        if (item == null) return false;
+        if (item == null) {
+            LOG.fine("MRV returned null at iteration " + iterations[0] + " (empty domain detected)");
+            return false;
+        }
 
         Set<ScheduleSlot> domain = tracker.domains.get(item);
-        if (domain == null || domain.isEmpty()) return false;
+        if (domain == null || domain.isEmpty()) {
+            LOG.fine("Empty domain for item " + item.assignment().getId()
+                    + " (lessonIndex=" + item.lessonIndex() + ") at iteration " + iterations[0]);
+            return false;
+        }
 
         List<ScheduleSlot> candidates = domain.stream()
                 .filter(slot -> {
@@ -218,7 +245,14 @@ public class BacktrackingScheduler {
             for (var entry : domains.entrySet()) {
                 if (assigned.contains(entry.getKey())) continue;
                 int size = entry.getValue().size();
-                if (size == 0) return null;
+                if (size == 0) {
+                    TeachingAssignment ta = entry.getKey().assignment();
+                    LOG.fine("Empty domain for teacher=" + ta.getTeacherId()
+                            + " class=" + ta.getClassStreamId()
+                            + " subject=" + ta.getSubjectId()
+                            + " lessonIndex=" + entry.getKey().lessonIndex());
+                    return null;
+                }
                 int deg = degreeCache.getOrDefault(entry.getKey(), 0);
                 if (size < minSize || (size == minSize && deg > maxDegree)) {
                     minSize = size;

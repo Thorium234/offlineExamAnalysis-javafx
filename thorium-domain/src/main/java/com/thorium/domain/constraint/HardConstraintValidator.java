@@ -45,6 +45,29 @@ public class HardConstraintValidator {
         return true;
     }
 
+    public String canPlaceReason(TeachingAssignment assignment, ScheduleSlot slot,
+                                  PartialSchedule schedule, SchedulingContext context) {
+        if (!isTeacherAvailable(assignment, slot, context)) {
+            return "Teacher unavailable (teacherId=" + assignment.getTeacherId() + ")";
+        }
+        if (isTeacherBusy(assignment, slot, schedule)) {
+            return "Teacher busy";
+        }
+        if (isClassBusy(assignment, slot, schedule)) {
+            return "Class busy";
+        }
+        if (violatesCbcNoDouble(assignment, slot, schedule, context)) {
+            return "CBC no double";
+        }
+        if (violatesRequiredDouble(assignment, slot, schedule, context)) {
+            return "Required double violation";
+        }
+        if (exceedsWeeklyCount(assignment, schedule)) {
+            return "Exceeds weekly count";
+        }
+        return null;
+    }
+
     public boolean isRoomAvailable(Long roomId, ScheduleSlot slot, List<TimetableEntry> entries, Long excludeEntryId) {
         if (roomId == null) {
             return true;

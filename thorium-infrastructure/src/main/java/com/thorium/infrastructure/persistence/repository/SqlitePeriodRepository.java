@@ -118,6 +118,19 @@ public class SqlitePeriodRepository extends AbstractRepository implements Period
         }
     }
 
+    @Override
+    public int countLessons() {
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM periods WHERE type = ?")) {
+            ps.setString(1, Period.TYPE_LESSON);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getInt(1) : 0;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to count lesson periods", e);
+        }
+    }
+
     private Period map(ResultSet rs) throws SQLException {
         long breakIdRaw = rs.getLong("break_id");
         Long breakId = rs.wasNull() ? null : breakIdRaw;

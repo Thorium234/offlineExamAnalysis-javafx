@@ -16,4 +16,6 @@ public interface PeriodRepository {
     void deleteById(Long id);
 
     int count();
+
+    int countLessons();
 }

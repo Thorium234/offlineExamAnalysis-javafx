@@ -354,7 +354,7 @@ public class TimetableEditorUseCase {
         Map<Long, String> roomCodes = roomRepository.findAll().stream()
                 .collect(Collectors.toMap(Room::getId, Room::getCode));
 
-        int periodsPerDay = periodRepository.count();
+        int periodsPerDay = periodRepository.countLessons();
         SchedulingContext schedulingContext = SchedulingContext.builder()
                 .assignments(assignments)
                 .teachers(new ArrayList<>(teachers.values()))

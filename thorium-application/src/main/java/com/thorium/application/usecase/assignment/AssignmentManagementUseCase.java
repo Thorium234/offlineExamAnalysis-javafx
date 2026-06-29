@@ -95,7 +95,7 @@ public class AssignmentManagementUseCase {
         if (dto.lessonsPerWeek() <= 0) {
             throw new IllegalArgumentException("Lessons per week must be positive");
         }
-        int totalSlots = periodRepository.count() * DayOfWeek.workingDays().size();
+        int totalSlots = periodRepository.countLessons() * DayOfWeek.workingDays().size();
         if (dto.lessonsPerWeek() > totalSlots) {
             throw new IllegalArgumentException(
                     "Lessons per week (" + dto.lessonsPerWeek() + ") exceeds available weekly slots (" + totalSlots + ")");

@@ -9,8 +9,11 @@ import com.thorium.domain.model.TeachingAssignment;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class GreedyScheduler {
+
+    private static final Logger LOG = Logger.getLogger(GreedyScheduler.class.getName());
 
     private final HardConstraintValidator hardValidator;
     private final SoftConstraintScorer softScorer;
@@ -25,7 +28,9 @@ public class GreedyScheduler {
         List<AssignmentWorkItem> workItems = expandAssignments(context);
         workItems.sort(Comparator.comparingInt(AssignmentWorkItem::difficulty).reversed());
 
-        for (AssignmentWorkItem item : workItems) {
+        int rejectedCount = 0;
+        for (int i = 0; i < workItems.size(); i++) {
+            AssignmentWorkItem item = workItems.get(i);
             ScheduleSlot bestSlot = findBestSlot(item.assignment(), item.requiresConsecutive, schedule, context);
             if (bestSlot != null) {
                 schedule.place(new PlacedLesson(item.assignment(), bestSlot));
@@ -33,9 +38,44 @@ public class GreedyScheduler {
                     ScheduleSlot second = new ScheduleSlot(bestSlot.dayOfWeek(), bestSlot.periodNumber() + 1);
                     schedule.place(new PlacedLesson(item.assignment(), second));
                 }
+            } else {
+                rejectedCount++;
+                if (rejectedCount == 1) {
+                    LOG.warning("No slot found for first item (teacher=" + item.assignment().getTeacherId()
+                            + ", subject=" + item.assignment().getSubjectId()
+                            + ", class=" + item.assignment().getClassStreamId()
+                            + ", lessons=" + item.assignment().getLessonsPerWeek()
+                            + ") difficulty=" + item.difficulty);
+                    logSlotDiagnostics(item.assignment(), context);
+                } else if (rejectedCount <= 5 || i == workItems.size() - 1) {
+                    LOG.warning("No slot for assignment " + item.assignment().getId()
+                            + " (teacher=" + item.assignment().getTeacherId()
+                            + ", subject=" + item.assignment().getSubjectId()
+                            + ", class=" + item.assignment().getClassStreamId()
+                            + ") after " + schedule.size() + " placed");
+                }
             }
         }
+        if (rejectedCount > 0) {
+            LOG.warning("Greedy scheduler: " + rejectedCount + "/" + workItems.size()
+                    + " items could not be placed (" + schedule.size() + " placed)");
+        }
         return schedule;
+    }
+
+    private void logSlotDiagnostics(TeachingAssignment assignment, SchedulingContext context) {
+        LOG.warning("Diagnosing all " + context.allSlots().size() + " slots for assignment " + assignment.getId());
+        int rejected = 0;
+        for (ScheduleSlot slot : context.allSlots()) {
+            String reason = hardValidator.canPlaceReason(assignment, slot, new PartialSchedule(), context);
+            if (reason != null) {
+                rejected++;
+                if (rejected <= 5) {
+                    LOG.warning("  Slot " + slot + " rejected: " + reason);
+                }
+            }
+        }
+        LOG.warning("Diagnostic: " + rejected + "/" + context.allSlots().size() + " slots rejected for first item");
     }
 
     public List<AssignmentWorkItem> expandAssignments(SchedulingContext context) {

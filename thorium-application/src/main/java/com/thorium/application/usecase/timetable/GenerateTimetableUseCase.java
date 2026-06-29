@@ -60,7 +60,7 @@ public class GenerateTimetableUseCase {
             throw new IllegalStateException("No teaching assignments defined");
         }
 
-        int periodsPerDay = periodRepository.count();
+        int periodsPerDay = periodRepository.countLessons();
         if (periodsPerDay == 0) {
             throw new IllegalStateException("No periods configured");
         }
