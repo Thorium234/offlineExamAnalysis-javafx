@@ -15,6 +15,7 @@ public final class SchedulingContext {
     private final Map<Long, Set<ScheduleSlot>> unavailableByTeacher;
     private final List<DayOfWeek> workingDays;
     private final int periodsPerDay;
+    private final List<Integer> lessonPeriodNumbers;
     private final boolean cbcNoDoubleLessonEnabled;
 
     private SchedulingContext(Builder builder) {
@@ -25,6 +26,7 @@ public final class SchedulingContext {
         this.unavailableByTeacher = Map.copyOf(builder.unavailableByTeacher);
         this.workingDays = List.copyOf(builder.workingDays);
         this.periodsPerDay = builder.periodsPerDay;
+        this.lessonPeriodNumbers = List.copyOf(builder.lessonPeriodNumbers);
         this.cbcNoDoubleLessonEnabled = builder.cbcNoDoubleLessonEnabled;
     }
 
@@ -57,6 +59,14 @@ public final class SchedulingContext {
         return periodsPerDay;
     }
 
+    public List<Integer> lessonPeriodNumbers() {
+        return lessonPeriodNumbers;
+    }
+
+    public int indexOfLessonPeriod(int periodNumber) {
+        return lessonPeriodNumbers.indexOf(periodNumber);
+    }
+
     public boolean isCbcNoDoubleLessonEnabled() {
         return cbcNoDoubleLessonEnabled;
     }
@@ -64,8 +74,8 @@ public final class SchedulingContext {
     public List<ScheduleSlot> allSlots() {
         List<ScheduleSlot> slots = new ArrayList<>();
         for (DayOfWeek day : workingDays) {
-            for (int period = 1; period <= periodsPerDay; period++) {
-                slots.add(new ScheduleSlot(day, period));
+            for (int pn : lessonPeriodNumbers) {
+                slots.add(new ScheduleSlot(day, pn));
             }
         }
         return slots;
@@ -73,6 +83,12 @@ public final class SchedulingContext {
 
     public int totalSlots() {
         return workingDays.size() * periodsPerDay;
+    }
+
+    public ScheduleSlot nextLessonSlot(ScheduleSlot slot) {
+        int idx = lessonPeriodNumbers.indexOf(slot.periodNumber());
+        if (idx < 0 || idx >= lessonPeriodNumbers.size() - 1) return null;
+        return new ScheduleSlot(slot.dayOfWeek(), lessonPeriodNumbers.get(idx + 1));
     }
 
     public static Builder builder() {
@@ -86,8 +102,15 @@ public final class SchedulingContext {
         private Map<Long, ClassStream> classStreamsById = Map.of();
         private Map<Long, Set<ScheduleSlot>> unavailableByTeacher = Map.of();
         private List<DayOfWeek> workingDays = DayOfWeek.workingDays();
+        private List<Integer> lessonPeriodNumbers = defaultLessonPeriodNumbers(8);
         private int periodsPerDay = 8;
         private boolean cbcNoDoubleLessonEnabled = true;
+
+        private static List<Integer> defaultLessonPeriodNumbers(int count) {
+            List<Integer> list = new ArrayList<>();
+            for (int i = 1; i <= count; i++) list.add(i);
+            return list;
+        }
 
         public Builder assignments(List<TeachingAssignment> assignments) {
             this.assignments = assignments;
@@ -138,8 +161,15 @@ public final class SchedulingContext {
             return this;
         }
 
+        public Builder lessonPeriodNumbers(List<Integer> periodNumbers) {
+            this.lessonPeriodNumbers = List.copyOf(periodNumbers);
+            this.periodsPerDay = periodNumbers.size();
+            return this;
+        }
+
         public Builder periodsPerDay(int periodsPerDay) {
             this.periodsPerDay = periodsPerDay;
+            this.lessonPeriodNumbers = defaultLessonPeriodNumbers(periodsPerDay);
             return this;
         }
 

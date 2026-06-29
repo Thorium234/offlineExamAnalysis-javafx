@@ -151,7 +151,8 @@ public class BacktrackingScheduler {
                     if (tier == Tier.STRICT) {
                         if (!hardValidator.canPlace(item.assignment(), slot, schedule, context)) return false;
                         if (item.requiresConsecutive()) {
-                            ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
+                            ScheduleSlot next = context.nextLessonSlot(slot);
+                            if (next == null) return false;
                             if (!hardValidator.canPlace(item.assignment(), next, schedule, context)) return false;
                         }
                         return true;
@@ -169,8 +170,8 @@ public class BacktrackingScheduler {
             schedule.place(placed);
 
             if (item.requiresConsecutive()) {
-                ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
-                if (!hardValidator.canPlace(item.assignment(), next, schedule, context)) {
+                ScheduleSlot next = context.nextLessonSlot(slot);
+                if (next == null || !hardValidator.canPlace(item.assignment(), next, schedule, context)) {
                     schedule.removeLast();
                     continue;
                 }
@@ -206,6 +207,7 @@ public class BacktrackingScheduler {
         final Map<GreedyScheduler.AssignmentWorkItem, Integer> degreeCache;
         final Set<GreedyScheduler.AssignmentWorkItem> assigned;
         final Deque<List<PrunedPair>> history;
+        final SchedulingContext context;
 
         DomainTracker(List<GreedyScheduler.AssignmentWorkItem> items, SchedulingContext context,
                       HardConstraintValidator hardValidator, Tier tier) {
@@ -215,16 +217,18 @@ public class BacktrackingScheduler {
             this.degreeCache = new HashMap<>();
             this.assigned = new HashSet<>();
             this.history = new ArrayDeque<>();
+            this.context = context;
 
             List<ScheduleSlot> allSlots = context.allSlots();
-            int periodsPerDay = context.periodsPerDay();
+            int maxIdx = context.periodsPerDay();
 
             for (var item : items) {
                 TeachingAssignment ta = item.assignment();
                 Set<ScheduleSlot> valid = new HashSet<>();
-                int maxPeriod = item.requiresConsecutive() ? periodsPerDay - 1 : periodsPerDay;
+                int limit = item.requiresConsecutive() ? maxIdx - 1 : maxIdx;
                 for (ScheduleSlot slot : allSlots) {
-                    if (slot.periodNumber() > maxPeriod) continue;
+                    int idx = context.indexOfLessonPeriod(slot.periodNumber());
+                    if (idx < 0 || idx >= limit) continue;
                     if (context.isTeacherUnavailable(ta.getTeacherId(), slot)) continue;
                     valid.add(slot);
                 }
@@ -292,8 +296,10 @@ public class BacktrackingScheduler {
 
             pruned.addAll(pruneSlotFromOthers(slot, teacherId, classId));
             if (placed.requiresConsecutive()) {
-                ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
-                pruned.addAll(pruneSlotFromOthers(next, teacherId, classId));
+                ScheduleSlot next = context.nextLessonSlot(slot);
+                if (next != null) {
+                    pruned.addAll(pruneSlotFromOthers(next, teacherId, classId));
+                }
             }
 
             history.push(pruned);

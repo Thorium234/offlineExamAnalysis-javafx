@@ -60,9 +60,9 @@ public class GenerateTimetableUseCase {
             throw new IllegalStateException("No teaching assignments defined");
         }
 
-        int periodsPerDay = periodRepository.countLessons();
-        if (periodsPerDay == 0) {
-            throw new IllegalStateException("No periods configured");
+        List<Integer> lessonPeriodNumbers = periodRepository.findLessonPeriodNumbers();
+        if (lessonPeriodNumbers.isEmpty()) {
+            throw new IllegalStateException("No lesson periods configured");
         }
 
         SchedulingContext context = SchedulingContext.builder()
@@ -71,7 +71,7 @@ public class GenerateTimetableUseCase {
                 .subjects(subjectRepository.findAll())
                 .classStreams(classStreamRepository.findAll())
                 .teacherAvailability(availabilityRepository.findAll())
-                .periodsPerDay(periodsPerDay)
+                .lessonPeriodNumbers(lessonPeriodNumbers)
                 .constraints(constraintRepository.findAll())
                 .build();
 

@@ -354,14 +354,14 @@ public class TimetableEditorUseCase {
         Map<Long, String> roomCodes = roomRepository.findAll().stream()
                 .collect(Collectors.toMap(Room::getId, Room::getCode));
 
-        int periodsPerDay = periodRepository.countLessons();
+        List<Integer> lessonPeriodNumbers = periodRepository.findLessonPeriodNumbers();
         SchedulingContext schedulingContext = SchedulingContext.builder()
                 .assignments(assignments)
                 .teachers(new ArrayList<>(teachers.values()))
                 .subjects(new ArrayList<>(subjects.values()))
                 .classStreams(new ArrayList<>(classStreams.values()))
                 .teacherAvailability(availabilityRepository.findAll())
-                .periodsPerDay(periodsPerDay)
+                .lessonPeriodNumbers(lessonPeriodNumbers)
                 .constraints(constraintRepository.findAll())
                 .build();
 

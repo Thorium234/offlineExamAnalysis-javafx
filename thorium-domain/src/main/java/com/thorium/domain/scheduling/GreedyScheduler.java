@@ -96,15 +96,20 @@ public class GreedyScheduler {
         long unavailableCount = 0;
         long totalSlots = 0;
         boolean isDouble = assignment.getDuration() == LessonDuration.DOUBLE;
+        List<Integer> periods = context.lessonPeriodNumbers();
+        int maxIdx = isDouble ? periods.size() - 1 : periods.size();
         for (var day : context.workingDays()) {
-            int maxPeriod = isDouble ? context.periodsPerDay() - 1 : context.periodsPerDay();
-            for (int p = 1; p <= maxPeriod; p++) {
+            for (int idx = 0; idx < maxIdx; idx++) {
+                int pn = periods.get(idx);
                 totalSlots++;
-                if (context.isTeacherUnavailable(assignment.getTeacherId(), new ScheduleSlot(day, p))) {
+                if (context.isTeacherUnavailable(assignment.getTeacherId(), new ScheduleSlot(day, pn))) {
                     unavailableCount++;
                 }
-                if (isDouble && context.isTeacherUnavailable(assignment.getTeacherId(), new ScheduleSlot(day, p + 1))) {
-                    unavailableCount++;
+                if (isDouble) {
+                    int nextPn = periods.get(idx + 1);
+                    if (context.isTeacherUnavailable(assignment.getTeacherId(), new ScheduleSlot(day, nextPn))) {
+                        unavailableCount++;
+                    }
                 }
             }
         }
@@ -119,14 +124,16 @@ public class GreedyScheduler {
         ScheduleSlot best = null;
         double bestScore = Double.NEGATIVE_INFINITY;
 
-        int maxPeriod = requiresConsecutive ? context.periodsPerDay() - 1 : context.periodsPerDay();
+        int maxIdx = context.periodsPerDay() - (requiresConsecutive ? 1 : 0);
         for (ScheduleSlot slot : context.allSlots()) {
-            if (slot.periodNumber() > maxPeriod) continue;
+            int idx = context.indexOfLessonPeriod(slot.periodNumber());
+            if (idx < 0 || idx >= maxIdx) continue;
             if (!hardValidator.canPlace(assignment, slot, schedule, context)) {
                 continue;
             }
             if (requiresConsecutive) {
-                ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), slot.periodNumber() + 1);
+                int nextPn = context.lessonPeriodNumbers().get(idx + 1);
+                ScheduleSlot next = new ScheduleSlot(slot.dayOfWeek(), nextPn);
                 if (!hardValidator.canPlace(assignment, next, schedule, context)) {
                     continue;
                 }

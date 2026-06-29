@@ -131,6 +131,24 @@ public class SqlitePeriodRepository extends AbstractRepository implements Period
         }
     }
 
+    @Override
+    public List<Integer> findLessonPeriodNumbers() {
+        try (Connection conn = connection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT period_number FROM periods WHERE type = ? ORDER BY period_number")) {
+            ps.setString(1, Period.TYPE_LESSON);
+            try (ResultSet rs = ps.executeQuery()) {
+                List<Integer> numbers = new ArrayList<>();
+                while (rs.next()) {
+                    numbers.add(rs.getInt("period_number"));
+                }
+                return numbers;
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to find lesson period numbers", e);
+        }
+    }
+
     private Period map(ResultSet rs) throws SQLException {
         long breakIdRaw = rs.getLong("break_id");
         Long breakId = rs.wasNull() ? null : breakIdRaw;

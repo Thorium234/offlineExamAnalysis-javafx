@@ -18,4 +18,6 @@ public interface PeriodRepository {
     int count();
 
     int countLessons();
+
+    List<Integer> findLessonPeriodNumbers();
 }
